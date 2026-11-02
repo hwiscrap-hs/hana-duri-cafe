@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>하나·두리 생일카페</title>
+<style>
+  :root {
+    --bg: #fff5f8; --card: #ffffff; --pink: #ff6fa5; --pink-soft: #ffd6e5;
+    --text: #4a2b37; --muted: #b07a8f; --warn: #c0773a;
+  }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text); display: flex; flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif; letter-spacing: -0.03em;
+  }
+  header { background: var(--card); border-bottom: 1px solid var(--pink-soft); padding: 10px 16px 0; }
+  .row { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; max-width: 960px; margin: 0 auto; }
+  .brand { font-weight: 800; color: var(--pink); font-size: 16px; margin-right: auto; }
+  .status { font-size: 12px; color: var(--muted); }
+  .status.warn { color: var(--warn); }
+  nav { display: flex; gap: 4px; overflow-x: auto; max-width: 960px; margin: 8px auto 0; }
+  nav a { padding: 9px 14px; font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; border-bottom: 3px solid transparent; white-space: nowrap; }
+  nav a[aria-current="page"] { color: var(--pink); border-color: var(--pink); }
+  nav a:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
+  main { flex: 1; min-height: 0; }
+  iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--bg); }
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div class="brand">하나·두리 생일카페 ♡</div>
+    <div class="status" id="status">불러오는 중…</div>
+  </div>
+  <nav id="tabs" aria-label="계산기">
+    <a href="#luckydraw" data-page="luckydraw">럭키드로우</a>
+    <a href="#gacha" data-page="gacha">가챠</a>
+    <a href="#benefits" data-page="benefits">특전 · DP</a>
+    <a href="#summary" data-page="summary">정산</a>
+  </nav>
+</header>
+<main><iframe id="frame" title="계산기"></iframe></main>
+<script>
+// 보기 전용: data.json(마지막으로 올린 값)을 계산기 저장소에 넣고 보여줌. 여기서 고친 값은 저장되지 않음.
+const PAGES = ['luckydraw', 'gacha', 'benefits', 'summary'];
+const frame = document.getElementById('frame');
+const statusEl = document.getElementById('status');
+
+const current = () => { const h = location.hash.slice(1); return PAGES.includes(h) ? h : 'luckydraw'; };
+function show(page) {
+  for (const a of document.querySelectorAll('#tabs a')) a.removeAttribute('aria-current');
+  document.querySelector(`#tabs a[data-page="${page}"]`).setAttribute('aria-current', 'page');
+  frame.src = page + '.html';
+}
+
+frame.addEventListener('load', () => {
+  let doc; try { doc = frame.contentDocument; } catch { return; }
+  if (!doc) return;
+  const st = doc.createElement('style');
+  st.textContent = '.mini-nav{display:none!important}'
+    + 'input,textarea,select,button,label,[contenteditable]{pointer-events:none!important}input,textarea{caret-color:transparent}';
+  doc.head.append(st);
+  const lock = () => doc.querySelectorAll('input,textarea,select,button').forEach(n => { n.tabIndex = -1; if ('readOnly' in n) n.readOnly = true; });
+  lock(); new MutationObserver(lock).observe(doc.body, { childList: true, subtree: true });
+  doc.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    const page = (a.getAttribute('href') || '').replace(/\.html.*$/, '');
+    if (PAGES.includes(page)) { e.preventDefault(); location.hash = page; }
+  }, true);
+});
+
+(async () => {
+  try {
+    const res = await fetch('data.json', { cache: 'no-store' });
+    const { data, updatedAt } = await res.json();
+    for (const [k, v] of Object.entries(data || {})) {
+      try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {}
+    }
+    const t = new Date(updatedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    statusEl.textContent = `보기 전용 · ${t} 기준`;
+  } catch {
+    statusEl.textContent = '저장된 값을 불러오지 못했어요';
+    statusEl.classList.add('warn');
+  }
+  show(current());
+  addEventListener('hashchange', () => show(current()));
+})();
+</script>
+</body>
+</html>

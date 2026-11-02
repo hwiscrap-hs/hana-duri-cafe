@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_blank"><!-- 다른 계산기 · 정산 링크는 새 창으로 -->
+<title>가챠 계산기</title>
+<style>
+  :root {
+    --bg: #fff5f8;
+    --card: #ffffff;
+    --pink: #ff6fa5;
+    --pink-soft: #ffd6e5;
+    --pink-mid: #ffb3cf;
+    --pink-faint: #ffeef4;
+    --text: #4a2b37;
+    --muted: #b07a8f;
+    --loss: #9c8a91;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+    letter-spacing: -0.03em;
+  }
+  button, input, textarea { letter-spacing: inherit; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; color: var(--pink); }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .top h1 { margin: 0; flex: 1; }
+  .mini-nav { display: flex; gap: 4px; flex-shrink: 0; }
+  .mini-nav a {
+    border: 1.5px solid var(--pink-soft); border-radius: 99px; background: var(--card); padding: 3px 9px;
+    color: var(--pink); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap;
+  }
+  .mini-nav a:hover { background: var(--pink-faint); }
+
+  .panel {
+    background: var(--card); border-radius: 18px; padding: 16px 18px; margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(255, 111, 165, .08);
+  }
+  .panel-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 12px; }
+  .panel-title::before { content: "♡ "; color: var(--pink); }
+  .panel-title .memo { font-size: 13px; font-weight: 400; color: var(--muted); }
+
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--pink-faint); border-radius: 12px; padding: 10px 12px; }
+  .stat .label { font-size: 12px; color: var(--muted); }
+  .stat .value { font-size: 18px; font-weight: 700; margin-top: 6px; }
+  .stat.wide { grid-column: 1 / -1; background: var(--pink); color: #fff; text-align: center; }
+  .stat.wide .label { color: #fff; opacity: .85; }
+  .stat .value.loss { color: var(--loss); }
+
+  .gauge { margin-top: 14px; }
+  .gauge-bar { position: relative; height: 12px; background: var(--pink-soft); border-radius: 99px; }
+  .gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--pink-mid); border-radius: 99px 0 0 99px; }
+  .gauge-mark { position: absolute; top: -4px; bottom: -4px; width: 3px; background: var(--pink); border-radius: 2px; }
+  .gauge-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  .item { border-bottom: 1px dashed var(--pink-soft); padding: 12px 0; }
+  .item:last-of-type { border-bottom: none; }
+  .item-head { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: var(--pink); color: #fff;
+    display: grid; place-items: center; font-size: 14px; font-weight: 700;
+  }
+  .item-head .name { flex: 1; min-width: 0; font-weight: 600; font-size: 15px; }
+
+  .stage {
+    position: relative; flex-shrink: 0; border-radius: 99px; padding: 3px 10px; font-size: 12px; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+  }
+  .stage select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+  .stage.s0 { border: 1px dashed var(--pink-soft); color: var(--pink-mid); font-weight: 400; }
+  .stage.s1 { background: var(--pink-faint); color: var(--pink); }
+  .stage.s2 { background: var(--pink-soft); color: var(--pink); }
+  .stage.s3 { background: var(--pink); color: #fff; }
+
+  .facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 8px; }
+  .facts .chip { font-size: 11px; padding: 2px 7px; white-space: nowrap; }
+  .fact { font-size: 13px; font-weight: 600; margin-right: 2px; white-space: nowrap; }
+  .fields { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0 0; }
+  .field { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+  .calc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .chip { font-size: 12px; padding: 2px 9px; border-radius: 99px; background: var(--pink-faint); color: var(--pink); }
+  .chip.warn { background: #f3e6eb; color: var(--loss); }
+
+  input, textarea {
+    width: 100%; border: 1.5px solid var(--pink-soft); border-radius: 10px; padding: 7px 10px;
+    font: inherit; font-size: 14px; background: var(--pink-faint); color: var(--text);
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--pink); background: #fff; }
+  input[data-formula] { border-style: dashed; border-color: var(--pink-mid); }
+  .field input { text-align: right; padding: 4px 8px; font-size: 14px; min-width: 0; }
+  .note {
+    display: block; width: 100%; margin: 8px 0 0; resize: none; overflow: hidden;
+    border-style: dashed; background: #fff; font-size: 13px; line-height: 1.5; padding: 8px 10px;
+  }
+
+  .extra-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .extra-row .cost { width: 120px !important; flex-shrink: 0; text-align: right; }
+  .extra-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 10px 2px 0; }
+  .extra-total span:last-child { color: var(--pink); }
+  .sub-title { font-size: 13px; font-weight: 700; color: var(--pink); margin: 6px 0 2px; padding-top: 12px; border-top: 2px solid var(--pink-soft); }
+  .btn.ghost { background: var(--pink-faint); color: var(--pink); margin-top: 6px; padding: 7px 14px; font-size: 13px; }
+  .extra-total { border-top: 1px dashed var(--pink-soft); margin-top: 12px; }
+  .empty { font-size: 13px; color: var(--muted); text-align: center; padding: 6px 0; }
+
+  .del, .nudge button { border: none; background: none; color: var(--pink-mid); cursor: pointer; padding: 0 3px; }
+  .del { font-size: 18px; }
+  .nudge { display: flex; flex-direction: column; }
+  .nudge button { font-size: 11px; line-height: 1.1; }
+  .del:hover, .nudge button:hover { color: var(--pink); }
+
+  .btn {
+    border: none; border-radius: 10px; background: var(--pink); color: #fff; padding: 9px 14px;
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px;
+  }
+  .legend { font-size: 12px; color: var(--muted); margin-top: 24px; text-align: center; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Gotcha ♡</h1>
+    <nav class="mini-nav"><a href="luckydraw.html">럭키드로우</a><a href="benefits.html">특전·DP</a><a href="summary.html">정산</a></nav>
+  </div>
+  <div class="sub">생일카페 가챠 수량 · 흑자 계산기</div>
+
+  <div class="panel">
+    <div class="panel-title">흑자 계산 <span class="memo">(1회 3,000원 · 캡슐 200개)</span></div>
+    <div class="stats">
+      <div class="stat wide"><div class="label">손익분기</div><div class="value" id="breakeven"></div></div>
+      <div class="stat"><div class="label">캡슐 수</div><div class="value" id="capsules"></div></div>
+      <div class="stat"><div class="label">총 비용</div><div class="value" id="cost"></div></div>
+      <div class="stat"><div class="label">완판 매출</div><div class="value" id="revenue"></div></div>
+      <div class="stat"><div class="label">완판 순이익</div><div class="value" id="profit"></div></div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-bar"><div class="gauge-fill" id="gaugeFill"></div><div class="gauge-mark" id="gaugeMark"></div></div>
+      <div class="gauge-labels"><span>0개</span><span id="gaugeText"></span><span id="gaugeEnd"></span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">원가</div>
+    <div id="items"></div>
+    <div class="sub-title">부자재 · 기타</div>
+    <div id="extras"></div>
+    <button class="btn ghost" id="addExtra">+ 부자재 · 기타 추가</button>
+    <div class="extra-total"><span>원가 합계</span><span id="extraTotal"></span></div>
+  </div>
+
+  <div class="legend">
+    손익분기 = 총 비용 ÷ 1회 가격 · 완판 = 캡슐 수만큼 다 팔렸을 때<br>
+    여분 = 품목 총 수량 − 캡슐 수<br>
+    모든 내용은 이 브라우저에 자동 저장돼요
+  </div>
+</div>
+
+<script>
+const KEY = 'pink-gacha-v1';
+const PRICE = 3000;   // 확정된 1회 가격
+const CAPSULES = 200; // 확정된 캡슐 수
+const STAGES = ['진행 전', '주문서 작성 완료', '결제 완료', '배송 완료'];
+
+// kinds = 종류 수, perKind = 종류당 수량
+const gachaItem = (name = '', kinds = 0, perKind = 0, cost = 0, note = '', more = {}) =>
+  ({ id: crypto.randomUUID(), name, kinds, perKind, cost, note, stage: 0, ...more });
+const extraItem = (name = '', cost = 0) => ({ id: crypto.randomUUID(), name, cost });
+
+const defaults = {
+  items: [
+    gachaItem('아크릴 키링', 6, 40, 234000, '4.5*30mm\n군번줄 및 opp 별도 구매 필요', { stage: 2 }),
+  ],
+  oppV1: true,
+  extras: [extraItem('군번줄')],
+};
+
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || defaults; } catch { state = defaults; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+// OPP 봉투는 필요 없어서 뺌 (금액을 안 넣었을 때만, 한 번만)
+if (!state.oppV1) {
+  state.extras = state.extras.filter(x => !(x.name === 'OPP 봉투' && !x.cost));
+  state.oppV1 = true;
+}
+save(); // 처음 열었을 때도 저장해서 정산 페이지에서 읽을 수 있게
+
+const el = (tag, props = {}, ...children) => {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children);
+  return node;
+};
+
+const won = n => n.toLocaleString('ko-KR') + '원';
+const toNum = v => Number(String(v).replace(/[^\d]/g, '')) || 0;
+const pct = n => (Math.round(n * 10000) / 100).toLocaleString('ko-KR') + '%';
+const autosize = ta => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
+const total = it => it.kinds * it.perKind;
+
+// 엑셀처럼 "=14960*2", "=51200+23600" 같은 수식 계산 (+ − × ÷ 괄호만, ×·x·÷도 됨)
+function calc(expr) {
+  const s = expr.replace(/[,\s]/g, '').replace(/[×xX]/g, '*').replace(/÷/g, '/');
+  let i = 0;
+  const num = () => {
+    if (s[i] === '(') { i++; const v = add(); if (s[i++] !== ')') throw new Error(); return v; }
+    if (s[i] === '-') { i++; return -num(); }
+    const m = s.slice(i).match(/^\d+(\.\d+)?/);
+    if (!m) throw new Error();
+    i += m[0].length;
+    return Number(m[0]);
+  };
+  const mul = () => { let v = num(); while (s[i] === '*' || s[i] === '/') v = s[i++] === '*' ? v * num() : v / num(); return v; };
+  const add = () => { let v = mul(); while (s[i] === '+' || s[i] === '-') v = s[i++] === '+' ? v + mul() : v - mul(); return v; };
+  const v = add();
+  if (i !== s.length || !isFinite(v)) throw new Error();
+  return Math.max(0, Math.round(v));
+}
+
+// 숫자 칸: 쉼표 붙여 보여주고 글자 길이에 맞춰 너비 조절, 바뀌면 계산만 다시 함
+// "="로 시작하면 수식으로 보고 Enter나 다른 곳을 누를 때 계산. 수식은 저장돼서 칸을 누르면 다시 보임
+function numberInput(obj, key, onChange) {
+  const fKey = key + 'Formula';
+  const show = () => obj[key] ? obj[key].toLocaleString('ko-KR') : '';
+  const input = el('input', { value: show() });
+  const fit = () => { input.style.width = `calc(${Math.max(input.value.length, 2)}ch + 20px)`; };
+  const mark = () => {
+    if (obj[fKey]) { input.dataset.formula = ''; input.title = '수식 ' + obj[fKey]; }
+    else { delete input.dataset.formula; input.title = ''; }
+  };
+  input.onfocus = () => { if (obj[fKey]) { input.value = obj[fKey]; fit(); } };
+  input.oninput = () => {
+    if (input.value.trim().startsWith('=')) return fit();
+    delete obj[fKey];
+    obj[key] = toNum(input.value);
+    input.value = show();
+    mark(); fit(); save(); onChange();
+  };
+  input.onblur = () => {
+    const raw = input.value.trim();
+    if (raw.startsWith('=')) {
+      try { obj[key] = calc(raw.slice(1)); obj[fKey] = raw; } catch { /* 계산할 수 없는 수식이면 이전 값 유지 */ }
+      save(); onChange();
+    }
+    input.value = show();
+    mark(); fit();
+  };
+  input.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) input.blur(); };
+  mark(); fit();
+  return input;
+}
+
+function stagePill(it) {
+  const n = it.stage || 0;
+  const select = el('select', {
+    title: '진행상황',
+    onchange: e => { it.stage = Number(e.target.value); save(); render(); },
+  }, ...STAGES.map((name, i) => el('option', { value: i, textContent: name })));
+  select.value = n;
+  return el('label', { className: 'stage s' + n }, '●'.repeat(n) + '○'.repeat(3 - n) + ' ' + STAGES[n], select);
+}
+
+function updateSummary() {
+  const extraTotal = state.extras.reduce((s, x) => s + x.cost, 0);
+  const cost = state.items.reduce((s, it) => s + it.cost, 0) + extraTotal;
+  const revenue = CAPSULES * PRICE;
+  const profit = revenue - cost;
+  const breakeven = PRICE ? Math.ceil(cost / PRICE) : 0;
+
+  document.getElementById('extraTotal').textContent = won(cost);
+  document.getElementById('capsules').textContent = CAPSULES.toLocaleString('ko-KR') + '개';
+  document.getElementById('cost').textContent = won(cost);
+  document.getElementById('revenue').textContent = won(revenue);
+  const profitEl = document.getElementById('profit');
+  profitEl.textContent = (profit < 0 ? '−' : '') + won(Math.abs(profit));
+  profitEl.classList.toggle('loss', profit < 0);
+  document.getElementById('breakeven').textContent = breakeven <= CAPSULES
+    ? `${breakeven.toLocaleString('ko-KR')}개부터 흑자`
+    : `완판해도 ${won(-profit)} 적자`;
+
+  const ratio = CAPSULES ? Math.min(breakeven / CAPSULES, 1) : 0;
+  document.getElementById('gaugeFill').style.width = ratio * 100 + '%';
+  document.getElementById('gaugeMark').style.left = `calc(${ratio * 100}% - 1.5px)`;
+  document.getElementById('gaugeText').textContent = CAPSULES ? pct(ratio) : '';
+  document.getElementById('gaugeEnd').textContent = CAPSULES.toLocaleString('ko-KR') + '개';
+
+}
+
+
+function render() {
+  const box = document.getElementById('items');
+  box.innerHTML = '';
+  state.items.forEach(it => {
+    const spare = total(it) - CAPSULES;
+    const note = el('textarea', {
+      className: 'note', rows: 1, value: it.note, placeholder: '비고',
+      oninput: e => { it.note = e.target.value; autosize(e.target); save(); },
+    });
+    box.append(el('div', { className: 'item' },
+      el('div', { className: 'item-head' },
+        el('input', { className: 'name', value: it.name, placeholder: '품목', oninput: e => { it.name = e.target.value; save(); } }),
+        stagePill(it),
+      ),
+      // 발주 끝난 품목이라 수량·비용은 고정 표시: 6종 × 40개 = 총 240개 · 여분 · 비용 · 개당
+      el('div', { className: 'facts' },
+        el('span', { className: 'fact', textContent: `${it.kinds}종 × ${it.perKind}개` }),
+        el('span', { className: 'chip', textContent: `총 ${total(it).toLocaleString('ko-KR')}개` }),
+        el('span', { className: 'chip' + (spare < 0 ? ' warn' : ''), textContent: spare < 0 ? `${-spare}개 부족` : `여분 ${spare}개` }),
+        el('span', { className: 'chip', textContent: won(it.cost) }),
+        ...(it.cost && total(it) ? [el('span', { className: 'chip', textContent: `개당 ${won(Math.round(it.cost / total(it)))}` })] : []),
+      ),
+      note,
+    ));
+    requestAnimationFrame(() => autosize(note));
+  });
+  updateSummary();
+}
+
+function renderExtras() {
+  const box = document.getElementById('extras');
+  box.innerHTML = '';
+  if (!state.extras.length) box.append(el('div', { className: 'empty', textContent: '군번줄처럼 따로 사는 비용을 적어주세요' }));
+  state.extras.forEach((x, i) => {
+    const cost = numberInput(x, 'cost', updateSummary);
+    cost.className = 'cost'; cost.placeholder = '비용 (원)';
+    box.append(el('div', { className: 'extra-row' },
+      el('input', { value: x.name, placeholder: '품목', oninput: e => { x.name = e.target.value; save(); } }),
+      cost,
+      el('button', {
+        className: 'del', textContent: '×', title: '삭제',
+        onclick: () => { if (confirm(`"${x.name || '이 항목'}" 삭제할까요?`)) { state.extras.splice(i, 1); save(); renderExtras(); updateSummary(); } },
+      }),
+    ));
+  });
+}
+
+document.getElementById('addExtra').onclick = () => {
+  state.extras.push(extraItem());
+  save(); renderExtras(); updateSummary();
+  document.querySelectorAll('.extra-row input:first-child')[state.extras.length - 1]?.focus();
+};
+
+renderExtras();
+render();
+</script>
+</body>
+</html>

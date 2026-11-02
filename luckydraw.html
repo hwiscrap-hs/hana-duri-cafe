@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_blank"><!-- 다른 계산기 · 정산 링크는 새 창으로 -->
+<title>럭키드로우 계산기</title>
+<style>
+  :root {
+    --bg: #fff5f8;
+    --card: #ffffff;
+    --pink: #ff6fa5;
+    --pink-soft: #ffd6e5;
+    --pink-mid: #ffb3cf;
+    --pink-faint: #ffeef4;
+    --text: #4a2b37;
+    --muted: #b07a8f;
+    --loss: #9c8a91;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+    letter-spacing: -0.03em;
+  }
+  button, input, textarea { letter-spacing: inherit; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; color: var(--pink); }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .top h1 { margin: 0; flex: 1; }
+  .mini-nav { display: flex; gap: 4px; flex-shrink: 0; }
+  .mini-nav a {
+    border: 1.5px solid var(--pink-soft); border-radius: 99px; background: var(--card); padding: 3px 9px;
+    color: var(--pink); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap;
+  }
+  .mini-nav a:hover { background: var(--pink-faint); }
+
+  .panel {
+    background: var(--card); border-radius: 18px; padding: 16px 18px; margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(255, 111, 165, .08);
+  }
+  .panel-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 12px; }
+  .panel-title::before { content: "♡ "; color: var(--pink); }
+
+  .extra-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .extra-row .cost { width: 120px !important; flex-shrink: 0; text-align: right; }
+  .extra-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 10px 2px 0; }
+  .extra-total span:last-child { color: var(--pink); }
+  .empty { font-size: 13px; color: var(--muted); text-align: center; padding: 6px 0; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--pink-faint); border-radius: 12px; padding: 10px 12px; }
+  .stat .label { font-size: 12px; color: var(--muted); }
+  .stat .value { font-size: 18px; font-weight: 700; margin-top: 6px; }
+  .stat.wide { grid-column: 1 / -1; background: var(--pink); color: #fff; text-align: center; }
+  .stat.wide .label { color: #fff; opacity: .85; }
+  .panel-title .memo { font-size: 13px; font-weight: 400; color: var(--muted); }
+  .stat .value.loss { color: var(--loss); }
+
+  .gauge { margin-top: 14px; }
+  .gauge-bar { position: relative; height: 12px; background: var(--pink-soft); border-radius: 99px; overflow: visible; }
+  .gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--pink-mid); border-radius: 99px 0 0 99px; }
+  .gauge-mark { position: absolute; top: -4px; bottom: -4px; width: 3px; background: var(--pink); border-radius: 2px; }
+  .gauge-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  .prize { border-bottom: 1px dashed var(--pink-soft); padding: 12px 0; }
+  .prize:last-of-type { border-bottom: none; }
+  .prize-head { display: flex; align-items: center; gap: 8px; }
+  .rank {
+    width: 34px; height: 30px; flex-shrink: 0; border: 0; border-radius: 9px; background: var(--pink); color: #fff;
+    padding: 0; text-align: center; font: inherit; font-size: 14px; font-weight: 700; letter-spacing: 0;
+  }
+  .rank::placeholder { color: #ffffffaa; }
+  .rank:focus { outline: 2px solid var(--pink-mid); }
+  .prize-head .name { flex: 1; min-width: 0; font-weight: 600; font-size: 15px; }
+  .vendor-wrap { display: flex; align-items: center; flex-shrink: 0; }
+  .vendor {
+    border: 0; border-radius: 99px; padding: 3px 9px; background: var(--pink-faint); color: var(--pink);
+    font: inherit; font-size: 12px; font-weight: 600; white-space: nowrap; text-decoration: none; cursor: pointer;
+  }
+  a.vendor:hover { background: var(--pink-soft); }
+  .vendor.empty { background: none; border: 1px dashed var(--pink-soft); color: var(--pink-mid); font-weight: 400; flex-shrink: 0; }
+  .vendor-edit { font-size: 13px; }
+
+  .set-row { display: flex; align-items: center; gap: 8px; margin: 8px 0 0 38px; font-size: 12px; color: var(--muted); }
+  .set-label { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
+  .stage {
+    position: relative; flex-shrink: 0; border-radius: 99px; padding: 3px 10px; font-size: 12px; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+  }
+  .stage select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+  .stage.s0 { border: 1px dashed var(--pink-soft); color: var(--pink-mid); font-weight: 400; }
+  .stage.s1 { background: var(--pink-faint); color: var(--pink); }
+  .stage.s2 { background: var(--pink-soft); color: var(--pink); }
+  .stage.s3 { background: var(--pink-mid); color: #fff; }
+  .stage.s4 { background: var(--pink); color: #fff; }
+  .subtitle {
+    flex: 1; min-width: 0; padding: 4px 10px;
+    font-size: 12px; background: none; border: 1px dashed var(--pink-soft); color: var(--pink);
+  }
+  .fields { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0 0 38px; }
+  .field { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+  .calc { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0 38px; }
+  .chip { font-size: 12px; padding: 2px 9px; border-radius: 99px; background: var(--pink-faint); color: var(--pink); }
+  .chip.warn { background: #f3e6eb; color: var(--loss); }
+
+  input, textarea {
+    width: 100%; border: 1.5px solid var(--pink-soft); border-radius: 10px; padding: 7px 10px;
+    font: inherit; font-size: 14px; background: var(--pink-faint); color: var(--text);
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--pink); background: #fff; }
+  input[data-formula] { border-style: dashed; border-color: var(--pink-mid); }
+  .step, .unit-toggle {
+    border: 0; border-radius: 99px; padding: 2px 7px; font: inherit; font-size: 11px; cursor: pointer;
+    background: var(--pink-faint); color: var(--pink);
+  }
+  .unit-toggle { background: none; border: 1px dashed var(--pink-soft); color: var(--muted); padding: 1px 7px; }
+  .field input { text-align: right; padding: 4px 8px; font-size: 14px; min-width: 0; }
+  .note {
+    display: block; width: calc(100% - 38px); margin: 8px 0 0 38px; resize: none; overflow: hidden;
+    border-style: dashed; background: #fff; font-size: 13px; line-height: 1.5; padding: 8px 10px;
+  }
+
+  .del, .nudge button {
+    border: none; background: none; color: var(--pink-mid); cursor: pointer; padding: 0 3px;
+  }
+  .del { font-size: 18px; }
+  .nudge { display: flex; flex-direction: column; }
+  .nudge button { font-size: 11px; line-height: 1.1; }
+  .del:hover, .nudge button:hover { color: var(--pink); }
+
+  .btn {
+    border: none; border-radius: 10px; background: var(--pink); color: #fff; padding: 9px 14px;
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px;
+  }
+  .legend { font-size: 12px; color: var(--muted); margin-top: 24px; text-align: center; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Lucky Draw ♡</h1>
+    <nav class="mini-nav"><a href="gacha.html">가챠</a><a href="benefits.html">특전·DP</a><a href="summary.html">정산</a></nav>
+  </div>
+  <div class="sub">생일카페 럭키드로우 수량 · 흑자 계산기</div>
+
+  <div class="panel">
+    <div class="panel-title">흑자 계산 <span class="memo">(1장 3,000원)</span></div>
+    <div class="stats">
+      <div class="stat wide"><div class="label">손익분기</div><div class="value" id="breakeven"></div></div>
+      <div class="stat"><div class="label">총 추첨 장수</div><div class="value" id="tickets"></div></div>
+      <div class="stat"><div class="label">총 비용</div><div class="value" id="cost"></div></div>
+      <div class="stat"><div class="label">다 팔리면 매출</div><div class="value" id="revenue"></div></div>
+      <div class="stat"><div class="label">다 팔리면 순이익</div><div class="value" id="profit"></div></div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-bar"><div class="gauge-fill" id="gaugeFill"></div><div class="gauge-mark" id="gaugeMark"></div></div>
+      <div class="gauge-labels"><span>0장</span><span id="gaugeText"></span><span id="gaugeEnd"></span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">등수별 품목</div>
+    <div id="prizes"></div>
+    <div class="extra-total"><span>소계</span><span id="prizeTotal"></span></div>
+    <button class="btn" id="addPrize">+ 등수 추가</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">기타 비용</div>
+    <div id="extras"></div>
+    <div class="extra-total"><span>합계</span><span id="extraTotal"></span></div>
+    <button class="btn" id="addExtra">+ 기타 비용 추가</button>
+  </div>
+
+  <div class="legend">
+    총 추첨 장수 = 모든 등수의 추첨인원 합 (한 장당 하나씩 당첨)<br>
+    확률 = 추첨인원 ÷ 총 추첨 장수<br>
+    여분 = 실제발주 − 특전 − 추첨인원 (자동 계산)<br>
+    세트 칸에 "3종 1세트"라고 적으면 실제발주·여분을 세트로 세고,<br>
+    "여분 3종 1세트"라고 적으면 여분만 3개씩 묶어서도 보여줘요<br>
+    "특전 200장과 함께 발주"라고 적으면 200장(3종 1세트면 67세트)을 특전으로 빼요<br>
+    특전·여분 비용도 전부 럭드 금액으로 메꾸는 걸로 계산해요<br>
+    모든 내용은 이 브라우저에 자동 저장돼요
+  </div>
+</div>
+
+<script>
+const KEY = 'pink-luckydraw-v1';
+const PRICE = 3000; // 공지된 1장 가격
+
+// ordered = 실제발주 — 세트 품목은 세트, 아니면 개 단위
+// 세트 칸(subtitle)에 "3종 1세트" → 3장을 1세트로, "특전 200장과 함께 발주" → 200장은 럭드와 따로 계산
+const prize = (name, winners, ordered, cost, note = '', more = {}) =>
+  ({ id: crypto.randomUUID(), name, subtitle: '', winners, ordered, cost, note, ...more });
+
+// "여분 3종 1세트" → 경품은 1개씩이지만 여분은 3개를 1세트로 묶어서도 보여줌 (협력진 증정용)
+const SPARE_SET = /여분\D{0,4}?(\d+)\s*(?:종|장|개)\s*1\s*세트/;
+const spareSetSize = p => Number((p.subtitle || '').match(SPARE_SET)?.[1]) || 0;
+const setSize = p => Number((p.subtitle || '').replace(SPARE_SET, '').match(/(\d+)\s*(?:종|장|개)\s*1\s*세트/)?.[1]) || 1;
+const otherOf = p => {
+  const m = (p.subtitle || '').match(/특전\D{0,6}?(\d+)\s*장|(\d+)\s*장\s*과?\s*함께\s*발주/);
+  return m ? Number(m[1] || m[2]) : 0;
+};
+// 특전을 뺀 수량 (특전은 장 단위로 적으니 세트로 올림). 여기서 추첨인원을 빼면 여분
+const drawSets = p => p.inPieces
+  ? Math.floor(Math.max(p.ordered - otherOf(p), 0) / setSize(p))
+  : Math.max(p.ordered - Math.ceil(otherOf(p) / setSize(p)), 0);
+// 세트 품목을 장 단위로 발주할 때(inPieces) 세트로 묶고 남는 장수
+const leftoverPieces = p => p.inPieces ? Math.max(p.ordered - otherOf(p), 0) % setSize(p) : 0;
+const totalSets = p => p.inPieces ? p.ordered / setSize(p) : p.ordered;
+// 세트 칸에 "40장 단위 발주"(또는 "40의 배수")처럼 적으면 실제발주를 그 단위로 늘리고 줄이기
+const orderStep = p => {
+  const m = (p.subtitle || '').match(/(\d+)\s*의\s*배수|(\d+)\s*(?:장|개)\s*단위/);
+  return m ? Number(m[1] || m[2]) : 0;
+};
+
+const extraItem = (name = '', cost = 0) => ({ id: crypto.randomUUID(), name, cost });
+
+const defaults = {
+  // 처음 여는 경우엔 예전 버전 변환을 건너뜀
+  postcardV1: true, setsV1: true, setsV2: true, setsV3: true, giftSetsV1: true, orderedSetsV1: true, spareSetsV1: true, stageV1: true, piecesV1: true, step40V1: true, stage5V1: true,
+  extras: [],
+  prizes: [
+    prize('아크릴스탠드 (하나두리 택1)', 2, 8, 80000, '가로 50-69, 받침 50*30'),
+    prize('쿠션키링', 15, 21, 121800, '주문완료 · 프릴 추가 · 배송완료', { stage: 4 }),
+    prize('핀버튼 (3종 중 랜덤 1종)', 50, 60, 47830, '주문서 작성 완료\n2종 하트모양으로 변경함\n단체 : 58*58 원형 / 개인 : 57*52 하트', { stage: 1 }),
+    prize('띠부띠부씰 (3종 중 랜덤 1종)', 43, 75, 0, '1판 8장, 13판 주문, 키링과 도안 동일\n50*170mm', { subtitle: '여분 3종 1세트' }),
+    prize('칼선스티커', 50, 104, 68200, '', { subtitle: '2종 1세트' }),
+    prize('떡메모지', 90, 120, 38500),
+    prize('엽서', 100, 600, 67800, '주문서 작성 완료', { subtitle: '3종 1세트 · 특전 엽서 200장과 함께 발주 · 40장 단위 발주', stage: 1, inPieces: true }),
+  ],
+};
+
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || defaults; } catch { state = defaults; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+// 엽서: 600장 전체 대신 럭드 몫(100세트 = 300장, 33,900원)만 반영 (한 번만)
+if (!state.postcardV1) {
+  const card = state.prizes.find(p => p.name.startsWith('엽서') && p.ordered === 600 && p.cost === 67800);
+  if (card) Object.assign(card, { ordered: 100, cost: 33900 });
+  state.postcardV1 = true;
+}
+// 1세트 장수 · 럭드 외 사용 칸 추가: 엽서는 600장 전체를 넣고 자동 계산으로 바꿈 (한 번만)
+if (!state.setsV1) {
+  for (const p of state.prizes) { p.setSize ??= 1; p.other ??= 0; }
+  const card = state.prizes.find(p => p.name.startsWith('엽서') && p.ordered === 100 && p.cost === 33900);
+  if (card) Object.assign(card, { ordered: 600, cost: 67800, setSize: 3, other: 300, note: '주문서 작성 완료\n기본특전 200장, 협력용 여분 100장' });
+  state.setsV1 = true;
+}
+// 1세트 장수 → 소제목, 엽서 럭드 외 300장 → 특전 200 + 협력 증정 100 (한 번만)
+if (!state.setsV2) {
+  for (const p of state.prizes) {
+    p.subtitle ??= p.setSize > 1 ? `${p.setSize}종 1세트` : '';
+    p.gift ??= 0;
+    delete p.setSize;
+  }
+  const card = state.prizes.find(p => p.name.startsWith('엽서') && p.ordered === 600 && p.other === 300);
+  if (card) Object.assign(card, { other: 200, gift: 100, note: card.note.replace(/\n?기본특전 200장, 협력용 여분 100장/, '') });
+  state.setsV2 = true;
+}
+// 특전 칸 → 소제목에 적는 방식으로 (한 번만)
+if (!state.setsV3) {
+  for (const p of state.prizes) {
+    if (p.other && !otherOf(p)) p.subtitle = [p.subtitle, `특전 ${p.name.split(' ')[0]} ${p.other}장과 함께 발주`].filter(Boolean).join(' · ');
+    delete p.other;
+  }
+  state.setsV3 = true;
+}
+// 여분을 장 → 세트 단위로, 칼선스티커는 2종 1세트로 (한 번만)
+if (!state.giftSetsV1) {
+  for (const p of state.prizes) {
+    if (p.name.startsWith('칼선') && !p.subtitle) p.subtitle = '2종 1세트';
+    if (p.gift && setSize(p) > 1) p.gift = Math.floor(p.gift / setSize(p));
+  }
+  state.giftSetsV1 = true;
+}
+// 실제발주도 세트 단위로: 엽서 600장 → 200세트 (칼선스티커 104는 원래 세트 기준이라 그대로) (한 번만)
+if (!state.orderedSetsV1) {
+  const card = state.prizes.find(p => p.name.startsWith('엽서') && p.ordered === 600 && setSize(p) === 3);
+  if (card) card.ordered = 200;
+  state.orderedSetsV1 = true;
+}
+// 띠부띠부씰 여분은 3종 1세트로 묶어서도 표시 (한 번만)
+if (!state.spareSetsV1) {
+  const seal = state.prizes.find(p => p.name.startsWith('띠부'));
+  if (seal && !spareSetSize(seal)) seal.subtitle = [seal.subtitle, '여분 3종 1세트'].filter(Boolean).join(' · ');
+  state.spareSetsV1 = true;
+}
+// 진행상황 칸 추가: 비고에 적어둔 내용으로 처음 단계 정하기 (한 번만)
+if (!state.stageV1) {
+  for (const p of state.prizes) {
+    const note = (p.note || '').replace(/\s/g, '');
+    p.stage = note.includes('배송완료') ? 3 : note.includes('결제완료') ? 2 : note.includes('주문서작성완료') ? 1 : 0;
+  }
+  state.stageV1 = true;
+}
+// 등수 표시 (SS, S, A…): 처음 한 번 품목 이름으로 채워두고, 이후엔 칸에서 직접 고침
+const RANKS = [['아크릴', 'SS'], ['쿠션', 'S'], ['핀버튼', 'A'], ['띠부', 'B'], ['칼선', 'C'], ['떡메', 'D'], ['엽서', '\u2665']];
+for (const [i, p] of state.prizes.entries()) {
+  if (p.rank === undefined) p.rank = RANKS.find(([k]) => p.name.includes(k))?.[1] ?? String(i + 1);
+}
+// 배송 중 (제작 중) 단계 추가: 배송 완료 3 → 4 (한 번만)
+if (!state.stage5V1) {
+  for (const p of state.prizes) if (p.stage === 3) p.stage = 4;
+  state.stage5V1 = true;
+}
+// 엽서 실제발주는 다시 장 단위로 (200세트 → 600장), 4의 배수로 발주 (한 번만)
+if (!state.piecesV1) {
+  const card = state.prizes.find(p => p.name.startsWith('엽서') && setSize(p) === 3 && !p.inPieces);
+  if (card) {
+    card.ordered *= 3;
+    card.inPieces = true;
+    if (!orderStep(card)) card.subtitle += ' · 40장 단위 발주';
+  }
+  state.piecesV1 = true;
+}
+// 엽서 발주 단위 4장 → 40장 (한 번만)
+if (!state.step40V1) {
+  for (const p of state.prizes) p.subtitle = (p.subtitle || '').replace('4의 배수로 발주', '40장 단위 발주');
+  state.step40V1 = true;
+}
+// 세트 칸에 같은 문구가 두 번 들어간 경우 하나만 남김
+for (const p of state.prizes) p.subtitle = [...new Set((p.subtitle || '').split(' · '))].join(' · ');
+save();
+
+// 예전에 기타 비용을 한 칸에 적어둔 경우 목록 한 줄로 옮김
+if (!state.extras) {
+  state.extras = state.extra ? [extraItem('기타', state.extra)] : [];
+  delete state.extra;
+  save();
+}
+
+const el = (tag, props = {}, ...children) => {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children);
+  return node;
+};
+
+const won = n => n.toLocaleString('ko-KR') + '원';
+const toNum = v => Number(String(v).replace(/[^\d]/g, '')) || 0;
+const pct = n => (Math.round(n * 10000) / 100).toLocaleString('ko-KR') + '%';
+const autosize = ta => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
+
+// 엑셀처럼 "=14960*2", "=51200+23600" 같은 수식 계산 (+ − × ÷ 괄호만, ×·x·÷도 됨)
+function calc(expr) {
+  const s = expr.replace(/[,\s]/g, '').replace(/[×xX]/g, '*').replace(/÷/g, '/');
+  let i = 0;
+  const num = () => {
+    if (s[i] === '(') { i++; const v = add(); if (s[i++] !== ')') throw new Error(); return v; }
+    if (s[i] === '-') { i++; return -num(); }
+    const m = s.slice(i).match(/^\d+(\.\d+)?/);
+    if (!m) throw new Error();
+    i += m[0].length;
+    return Number(m[0]);
+  };
+  const mul = () => { let v = num(); while (s[i] === '*' || s[i] === '/') v = s[i++] === '*' ? v * num() : v / num(); return v; };
+  const add = () => { let v = mul(); while (s[i] === '+' || s[i] === '-') v = s[i++] === '+' ? v + mul() : v - mul(); return v; };
+  const v = add();
+  if (i !== s.length || !isFinite(v)) throw new Error();
+  return Math.max(0, Math.round(v));
+}
+
+// 숫자 칸: 쉼표 붙여 보여주고 글자 길이에 맞춰 너비 조절, 바뀌면 계산만 다시 함
+// "="로 시작하면 수식으로 보고 Enter나 다른 곳을 누를 때 계산. 수식은 저장돼서 칸을 누르면 다시 보임
+function numberInput(obj, key, onChange) {
+  const fKey = key + 'Formula';
+  const show = () => obj[key] ? obj[key].toLocaleString('ko-KR') : '';
+  const input = el('input', { value: show() });
+  const fit = () => { input.style.width = `calc(${Math.max(input.value.length, 2)}ch + 20px)`; };
+  const mark = () => {
+    if (obj[fKey]) { input.dataset.formula = ''; input.title = '수식 ' + obj[fKey]; }
+    else { delete input.dataset.formula; input.title = ''; }
+  };
+  input.onfocus = () => { if (obj[fKey]) { input.value = obj[fKey]; fit(); } };
+  input.oninput = () => {
+    if (input.value.trim().startsWith('=')) return fit();
+    delete obj[fKey];
+    obj[key] = toNum(input.value);
+    input.value = show();
+    mark(); fit(); save(); onChange();
+  };
+  input.onblur = () => {
+    const raw = input.value.trim();
+    if (raw.startsWith('=')) {
+      try { obj[key] = calc(raw.slice(1)); obj[fKey] = raw; } catch { /* 계산할 수 없는 수식이면 이전 값 유지 */ }
+      save(); onChange();
+    }
+    input.value = show();
+    mark(); fit();
+  };
+  input.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) input.blur(); };
+  mark(); fit();
+  return input;
+}
+
+function updateSummary() {
+  const tickets = state.prizes.reduce((s, p) => s + p.winners, 0);
+  const extraTotal = state.extras.reduce((s, x) => s + x.cost, 0);
+  const cost = state.prizes.reduce((s, p) => s + p.cost, 0) + extraTotal;
+  document.getElementById('extraTotal').textContent = won(extraTotal);
+  document.getElementById('prizeTotal').textContent = won(state.prizes.reduce((s, p) => s + p.cost, 0));
+  const revenue = tickets * PRICE;
+  const profit = revenue - cost;
+  const breakeven = PRICE ? Math.ceil(cost / PRICE) : 0;
+
+  document.getElementById('tickets').textContent = tickets.toLocaleString('ko-KR') + '장';
+  document.getElementById('cost').textContent = won(cost);
+  document.getElementById('revenue').textContent = won(revenue);
+  const profitEl = document.getElementById('profit');
+  profitEl.textContent = (profit < 0 ? '−' : '') + won(Math.abs(profit));
+  profitEl.classList.toggle('loss', profit < 0);
+  document.getElementById('breakeven').textContent = breakeven <= tickets
+    ? `${breakeven.toLocaleString('ko-KR')}장부터 흑자`
+    : `다 팔아도 ${won(-profit)} 적자`;
+
+  // 막대: 전체 장수 중 손익분기까지가 연분홍, 진한 선이 손익분기 지점
+  const ratio = tickets ? Math.min(breakeven / tickets, 1) : 0;
+  document.getElementById('gaugeFill').style.width = ratio * 100 + '%';
+  document.getElementById('gaugeMark').style.left = `calc(${ratio * 100}% - 1.5px)`;
+  document.getElementById('gaugeText').textContent = tickets ? pct(ratio) : '';
+  document.getElementById('gaugeEnd').textContent = tickets.toLocaleString('ko-KR') + '장';
+
+  for (const p of state.prizes) {
+    const chips = document.getElementById('calc-' + p.id);
+    if (!chips) continue;
+    chips.innerHTML = '';
+    chips.append(el('span', { className: 'chip', textContent: `확률 ${tickets ? pct(p.winners / tickets) : '-'}` }));
+    if (p.ordered) {
+      const sets = drawSets(p), spare = sets - p.winners, unit = setSize(p) > 1 ? '세트' : '개';
+      // 특전은 럭드와 다른 도안이라 세트에 안 들어감 → 특전 뺀 장수만 세트로 묶어서 보여줌
+      if (p.inPieces && setSize(p) > 1) {
+        const pieces = Math.max(p.ordered - otherOf(p), 0), rest = pieces % setSize(p);
+        const label = otherOf(p) ? `럭드 도안 ${pieces.toLocaleString('ko-KR')}장 (특전 ${otherOf(p)}장 제외)` : `${pieces.toLocaleString('ko-KR')}장`;
+        chips.append(el('span', { className: 'chip', textContent: `${label} = ${Math.floor(pieces / setSize(p))}세트${rest ? ` + ${rest}장` : ''}` }));
+      }
+      const left = leftoverPieces(p);
+      chips.append(el('span', { className: 'chip' + (spare < 0 ? ' warn' : ''),
+        textContent: spare < 0 ? `${-spare}${unit} 부족` : `여분 ${spare}${unit}${left ? ` + ${left}장` : ''}` }));
+      const step = orderStep(p);
+      if (step && p.ordered % step) {
+        const down = p.ordered - p.ordered % step;
+        chips.append(el('span', { className: 'chip warn', textContent: `${step}장 단위 아님 → ${down} 또는 ${down + step}` }));
+      }
+      const n = spareSetSize(p);
+      if (n && spare > 0) {
+        const rest = spare % n;
+        chips.append(el('span', { className: 'chip', textContent: `여분 ${Math.floor(spare / n)}세트${rest ? ` + ${rest}개` : ''} (${n}개씩)` }));
+      }
+      if (p.cost) chips.append(el('span', { className: 'chip', textContent: `${unit}당 ${won(Math.round(p.cost / totalSets(p)))}` }));
+    }
+  }
+}
+
+// 품목 옆 발주처: 이름을 누르면 사이트가 새 창으로 열림, ✎로 고치기 (이름을 비우면 삭제)
+// 진행상황: 진행 전 → 주문서 작성 완료 → 결제 완료 → 배송 완료
+const STAGES = ['진행 전', '주문서 작성 완료', '결제 완료', '배송 중 (제작 중)', '배송 완료'];
+function stagePill(p) {
+  const n = p.stage || 0;
+  const select = el('select', {
+    title: '진행상황',
+    onchange: e => { p.stage = Number(e.target.value); save(); render(); },
+  }, ...STAGES.map((name, i) => el('option', { value: i, textContent: name })));
+  select.value = n;
+  return el('label', { className: 'stage s' + n }, STAGES[n], select);
+}
+
+// 실제발주 칸: 세트 품목은 단위(세트/장)를 눌러 바꿀 수 있고, "N의 배수" 품목은 −N / +N 버튼
+function orderedField(p) {
+  const step = orderStep(p), size = setSize(p);
+  const bump = d => el('button', {
+    className: 'step', textContent: (d > 0 ? '+' : '−') + step,
+    onclick: () => { p.ordered = Math.max(0, p.ordered + d); save(); render(); },
+  });
+  const unit = size > 1
+    ? el('button', {
+        className: 'unit-toggle', textContent: p.inPieces ? '장' : '세트', title: '장 / 세트 단위 바꾸기',
+        onclick: () => {
+          p.ordered = p.inPieces ? Math.floor(p.ordered / size) : p.ordered * size;
+          p.inPieces = !p.inPieces; save(); render();
+        },
+      })
+    : '개';
+  return el('div', { className: 'field' }, '실제발주',
+    ...(step ? [bump(-step)] : []), numberInput(p, 'ordered', updateSummary), ...(step ? [bump(step)] : []), unit);
+}
+
+function vendorPill(p) {
+  const edit = () => {
+    const name = prompt('발주처 이름 (비우면 삭제)', p.vendor?.name || '');
+    if (name === null) return;
+    if (!name.trim()) { delete p.vendor; save(); render(); return; }
+    let url = prompt('발주처 사이트 주소 (없으면 비워두세요)', p.vendor?.url || '');
+    if (url === null) return;
+    url = url.trim();
+    if (url && !/^https?:\/\//.test(url)) url = 'https://' + url;
+    p.vendor = { name: name.trim(), url };
+    save(); render();
+  };
+  if (!p.vendor) return el('button', { className: 'vendor empty', textContent: '+ 발주처', onclick: edit });
+  const label = p.vendor.url
+    ? el('a', { className: 'vendor', href: p.vendor.url, target: '_blank', rel: 'noopener noreferrer', textContent: p.vendor.name + ' ↗', title: p.vendor.url })
+    : el('span', { className: 'vendor', textContent: p.vendor.name });
+  return el('span', { className: 'vendor-wrap' }, label, el('button', { className: 'del vendor-edit', textContent: '✎', title: '발주처 고치기', onclick: edit }));
+}
+
+function render() {
+  const box = document.getElementById('prizes');
+  box.innerHTML = '';
+  state.prizes.forEach((p, i) => {
+    const note = el('textarea', {
+      className: 'note', rows: 1, value: p.note, placeholder: '비고',
+      oninput: e => { p.note = e.target.value; autosize(e.target); save(); },
+    });
+    const move = dir => {
+      const j = i + dir;
+      if (j < 0 || j >= state.prizes.length) return;
+      [state.prizes[i], state.prizes[j]] = [state.prizes[j], state.prizes[i]];
+      save(); render();
+    };
+    box.append(el('div', { className: 'prize' },
+      el('div', { className: 'prize-head' },
+        el('input', {
+          className: 'rank', value: p.rank ?? '', placeholder: String(i + 1), title: '등수',
+          oninput: e => { p.rank = e.target.value; save(); },
+        }),
+        el('input', { className: 'name', value: p.name, placeholder: '품목', oninput: e => { p.name = e.target.value; save(); } }),
+        vendorPill(p),
+        el('span', { className: 'nudge' },
+          el('button', { textContent: '▴', title: '등수 올리기', onclick: () => move(-1) }),
+          el('button', { textContent: '▾', title: '등수 내리기', onclick: () => move(1) }),
+        ),
+        el('button', {
+          className: 'del', textContent: '×', title: '삭제',
+          onclick: () => { if (confirm(`${p.rank || i + 1} "${p.name}" 삭제할까요?`)) { state.prizes.splice(i, 1); save(); render(); } },
+        }),
+      ),
+      el('div', { className: 'set-row' },
+        el('label', { className: 'set-label' }, '세트', el('input', {
+          className: 'subtitle', value: p.subtitle, placeholder: '예: 3종 1세트 · 특전 200장과 함께 발주',
+          oninput: e => { p.subtitle = e.target.value; save(); updateSummary(); },
+          onchange: () => render(), // 세트 여부에 따라 실제발주 단위(세트/개) 다시 표시
+        })),
+        stagePill(p),
+      ),
+      el('div', { className: 'fields' },
+        el('label', { className: 'field' }, '추첨인원', numberInput(p, 'winners', updateSummary), '명'),
+        orderedField(p),
+        el('label', { className: 'field' }, '비용', numberInput(p, 'cost', updateSummary), '원'),
+      ),
+      el('div', { className: 'calc', id: 'calc-' + p.id }),
+      note,
+    ));
+    requestAnimationFrame(() => autosize(note));
+  });
+  updateSummary();
+}
+
+function renderExtras() {
+  const box = document.getElementById('extras');
+  box.innerHTML = '';
+  if (!state.extras.length) box.append(el('div', { className: 'empty', textContent: '포장재, 배송비처럼 등수에 안 들어가는 비용을 적어주세요' }));
+  state.extras.forEach((x, i) => {
+    const cost = numberInput(x, 'cost', updateSummary);
+    cost.className = 'cost'; cost.placeholder = '비용 (원)';
+    box.append(el('div', { className: 'extra-row' },
+      el('input', { value: x.name, placeholder: '품목', oninput: e => { x.name = e.target.value; save(); } }),
+      cost,
+      el('button', {
+        className: 'del', textContent: '×', title: '삭제',
+        onclick: () => { if (confirm(`"${x.name || '이 항목'}" 삭제할까요?`)) { state.extras.splice(i, 1); save(); renderExtras(); updateSummary(); } },
+      }),
+    ));
+  });
+}
+renderExtras();
+
+document.getElementById('addExtra').onclick = () => {
+  state.extras.push(extraItem());
+  save(); renderExtras(); updateSummary();
+  document.querySelectorAll('.extra-row input:first-child')[state.extras.length - 1]?.focus();
+};
+
+document.getElementById('addPrize').onclick = () => {
+  state.prizes.push(prize('', 0, 0, 0));
+  save(); render();
+  document.querySelectorAll('.prize .name')[state.prizes.length - 1]?.focus();
+};
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,1410 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_blank"><!-- 다른 계산기 · 정산 링크는 새 창으로 -->
+  <title>특전 · DP 계산기</title>
+  <style>
+    :root {
+      --bg: #fff5f8;
+      --card: #ffffff;
+      --pink: #ff6fa5;
+      --pink-soft: #ffd6e5;
+      --pink-mid: #ffb3cf;
+      --pink-faint: #ffeef4;
+      --text: #4a2b37;
+      --muted: #b07a8f;
+      --loss: #9c8a91;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+      letter-spacing: -0.03em;
+    }
+
+    button,
+    input,
+    textarea {
+      letter-spacing: inherit;
+    }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 16px 80px;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 0 0 4px;
+      color: var(--pink);
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .top h1 {
+      margin: 0;
+      flex: 1;
+    }
+
+    .mini-nav {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .mini-nav a {
+      border: 1.5px solid var(--pink-soft);
+      border-radius: 99px;
+      background: var(--card);
+      padding: 3px 9px;
+      color: var(--pink);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .mini-nav a:hover {
+      background: var(--pink-faint);
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 10px rgba(255, 111, 165, .08);
+    }
+
+    .panel-title {
+      font-size: 17px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .panel-title::before {
+      content: "♡ ";
+      color: var(--pink);
+    }
+
+    .panel-title .memo {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat {
+      background: var(--pink-faint);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .stat .label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat .value {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .stat.wide {
+      grid-column: 1 / -1;
+      background: var(--pink);
+      color: #fff;
+      text-align: center;
+    }
+
+    .stat.wide .label {
+      color: #fff;
+      opacity: .85;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--pink-soft);
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--muted);
+      font: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--pink);
+      border-color: var(--pink);
+      color: #fff;
+    }
+
+    .tab .count {
+      font-size: 12px;
+      font-weight: 500;
+      opacity: .85;
+      margin-left: 4px;
+    }
+
+    .cat-head {
+      position: relative;
+      text-align: center;
+      margin: 8px 0 8px;
+    }
+
+    .cat-name {
+      font-size: 17px;
+      font-weight: 700;
+      cursor: text;
+    }
+
+    .cat-name::before {
+      content: "♡ ";
+      color: var(--pink);
+    }
+
+    .cat-head .del {
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+
+    .cat-facts {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .item {
+      border-bottom: 1px dashed var(--pink-soft);
+      padding: 12px 0;
+    }
+
+    .item:last-of-type {
+      border-bottom: none;
+    }
+
+    .item-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .item-head .name {
+      flex: 1;
+      min-width: 0;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .vendor-wrap {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .vendor {
+      border: 0;
+      border-radius: 99px;
+      padding: 3px 9px;
+      background: var(--pink-faint);
+      color: var(--pink);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    a.vendor:hover {
+      background: var(--pink-soft);
+    }
+
+    .vendor.empty {
+      background: none;
+      border: 1px dashed var(--pink-soft);
+      color: var(--pink-mid);
+      font-weight: 400;
+      flex-shrink: 0;
+    }
+
+    .vendor-edit {
+      font-size: 13px;
+    }
+
+    .pill {
+      position: relative;
+      flex-shrink: 0;
+      border-radius: 99px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .pill select {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .stage.s0 {
+      border: 1px dashed var(--pink-soft);
+      color: var(--pink-mid);
+      font-weight: 400;
+    }
+
+    .stage.s1 {
+      background: var(--pink-faint);
+      color: var(--pink);
+    }
+
+    .stage.s2 {
+      background: var(--pink-soft);
+      color: var(--pink);
+    }
+
+    .stage.s3 {
+      background: var(--pink-mid);
+      color: #fff;
+    }
+
+    .stage.s4 {
+      background: var(--pink);
+      color: #fff;
+    }
+
+    .cat-pill {
+      border: 1px dashed var(--pink-soft);
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .spec-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .spec {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 10px;
+      font-size: 12px;
+      background: none;
+      border: 1px dashed var(--pink-soft);
+      color: var(--pink);
+    }
+
+    .chip.warn {
+      background: #f3e6eb;
+      color: var(--loss);
+    }
+
+    .item .fields {
+      gap: 6px;
+    }
+
+    .item .field {
+      gap: 3px;
+    }
+
+    .item .field input {
+      font-size: 13px;
+      padding: 3px 6px;
+    }
+
+    .item .fields .chip,
+    .item .fields .pill {
+      font-size: 11px;
+      padding: 2px 8px;
+    }
+
+    .item-head .cat-pill {
+      font-size: 11px;
+      padding: 2px 8px;
+    }
+
+    .fields {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      margin-top: 10px;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chip {
+      font-size: 12px;
+      padding: 2px 9px;
+      border-radius: 99px;
+      background: var(--pink-faint);
+      color: var(--pink);
+      white-space: nowrap;
+    }
+
+    .chip.strong {
+      background: var(--pink);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* 판으로 주문하는 품목 (조각스티커): 하나·두리별 나옴 · 필요 · 여분 표 */
+    .sheet {
+      margin-top: 10px;
+      background: var(--pink-faint);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .sheet-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .sheet-head .field input {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--pink);
+      background: #fff;
+    }
+
+    .sheet-head .chip {
+      background: #fff;
+    }
+
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr 1.3fr;
+      margin-top: 8px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .sheet-grid[hidden] {
+      display: none;
+    }
+
+    .sheet-grid>div {
+      padding: 6px 10px;
+      border-top: 1px dashed var(--pink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sheet-grid>.th {
+      border-top: none;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .sheet-grid>.rh {
+      text-align: left;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .sheet-grid>.sum {
+      font-weight: 700;
+    }
+
+    .sheet-grid>.spare {
+      background: var(--pink-soft);
+      color: var(--pink);
+      font-weight: 700;
+    }
+
+    .sheet-grid>.spare.warn {
+      background: #f3e6eb;
+      color: var(--loss);
+    }
+
+    .sheet-grid>.need {
+      display: flex;
+      justify-content: flex-end;
+      padding: 3px 6px;
+    }
+
+    .sheet-grid .need input {
+      text-align: right;
+      font-size: 13px;
+      padding: 2px 6px;
+    }
+
+    /* 표 접기/펴기: 접혀 있어도 나옴 · 필요 · 여분 합계는 보임 */
+    .sheet-toggle {
+      margin-left: auto;
+      border: none;
+      border-radius: 99px;
+      background: #fff;
+      color: var(--pink);
+      padding: 3px 10px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .sheet-toggle.warn {
+      color: var(--loss);
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1.5px solid var(--pink-soft);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font: inherit;
+      font-size: 14px;
+      background: var(--pink-faint);
+      color: var(--text);
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--pink);
+      background: #fff;
+    }
+
+    input[data-formula] {
+      border-style: dashed;
+      border-color: var(--pink-mid);
+    }
+
+    .unit-toggle {
+      border: 1px dashed var(--pink-soft);
+      border-radius: 99px;
+      background: none;
+      color: var(--muted);
+      padding: 1px 7px;
+      font: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .field input {
+      text-align: right;
+      padding: 4px 8px;
+      font-size: 14px;
+      min-width: 0;
+    }
+
+    .note {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      resize: none;
+      overflow: hidden;
+      border-style: dashed;
+      background: #fff;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 8px 10px;
+    }
+
+    .del {
+      border: none;
+      background: none;
+      color: var(--pink-mid);
+      cursor: pointer;
+      padding: 0 3px;
+      font-size: 18px;
+    }
+
+    .del:hover {
+      color: var(--pink);
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      background: var(--pink);
+      color: #fff;
+      padding: 9px 14px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .simple-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+    }
+
+    .simple-row input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .simple-row .cost {
+      flex: 0 0 120px;
+      width: 120px !important;
+      text-align: right;
+    }
+
+    .cat-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 2px 0;
+      margin-top: 4px;
+      border-top: 1px dashed var(--pink-soft);
+    }
+
+    .cat-total span:last-child {
+      color: var(--pink);
+    }
+
+    .item+.cat-total {
+      border-top: none;
+      margin-top: 0;
+    }
+
+    /* DP 탭: 패널 하나 안에 투두리스트처럼 작은 소제목 + 한 줄 품목 */
+    .dp-sub {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 2px solid var(--pink-soft);
+      padding: 26px 0 6px;
+    }
+
+    .panel-title+.dp-sub {
+      padding-top: 6px;
+    }
+
+    .dp-sub .text {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--pink);
+      cursor: text;
+    }
+
+    .dp-sub .text::before {
+      content: "✿ ";
+    }
+
+    .dp-sub .subsum {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dp-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--pink-soft);
+    }
+
+    .dp-row .name {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: none;
+      padding: 4px 2px;
+      font-size: 14px;
+    }
+
+    .dp-row .name:focus {
+      background: var(--pink-faint);
+    }
+
+    .dp-row .cost {
+      text-align: right;
+      font-size: 13px;
+      padding: 3px 6px;
+    }
+
+    .dp-row .won {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dp-row .pill {
+      font-size: 11px;
+      padding: 2px 8px;
+    }
+
+    /* 의상 말머리 [하나/두리] */
+    .dp-row .head {
+      min-width: 44px;
+      text-align: center;
+    }
+
+    .head.h0 {
+      border: 1px dashed var(--pink-soft);
+      color: var(--pink-mid);
+      font-weight: 400;
+    }
+
+    .head.h1 {
+      background: var(--pink-mid);
+      color: #fff;
+    }
+
+    .head.h2 {
+      background: var(--pink-faint);
+      color: var(--pink);
+      border: 1px solid var(--pink-soft);
+    }
+
+    /* 의상: 하나 | 두리 세로 두 칸 */
+    .dp-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .dp-col-title {
+      margin-top: 8px;
+      padding: 3px 0;
+      border-radius: 99px;
+      background: var(--pink-faint);
+      color: var(--pink);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .dp-col-title.h1 {
+      background: var(--pink-mid);
+      color: #fff;
+    }
+
+    .dp-col .dp-row {
+      flex-wrap: wrap;
+      gap: 4px 6px;
+    }
+
+    .dp-col .dp-row .name {
+      flex: 1 1 calc(100% - 30px);
+    }
+
+    .dp-col .dp-row .del {
+      order: -1;
+      margin-left: auto;
+    }
+
+    .dp-col .dp-row .name {
+      order: -2;
+    }
+
+    .dp-common-title {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dp-add {
+      border: none;
+      background: none;
+      color: var(--pink-mid);
+      font: inherit;
+      font-size: 13px;
+      padding: 6px 2px;
+      cursor: pointer;
+    }
+
+    .dp-add:hover {
+      color: var(--pink);
+    }
+
+    /* 마지막 품목 밑줄과 겹치지 않게 */
+    .btn.ghost {
+      background: var(--pink-faint);
+      color: var(--pink);
+      padding: 7px 14px;
+      font-size: 13px;
+    }
+
+    .legend {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 24px;
+      text-align: center;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>특전 · DP ♡</h1>
+      <nav class="mini-nav"><a href="luckydraw.html">럭키드로우</a><a href="gacha.html">가챠</a><a href="summary.html">정산</a>
+      </nav>
+    </div>
+    <div class="sub">생일카페 기본특전 · DP 비용 계산기</div>
+
+    <div class="panel">
+      <div class="panel-title">총 비용 <span class="memo">(업체 배송비 미포함)</span></div>
+      <div class="stats">
+        <div class="stat wide">
+          <div class="label">특전 + DP</div>
+          <div class="value" id="grand"></div>
+        </div>
+        <div class="stat">
+          <div class="label">특전</div>
+          <div class="value" id="sum-perk"></div>
+        </div>
+        <div class="stat">
+          <div class="label">DP</div>
+          <div class="value" id="sum-dp"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div id="cats"></div>
+    <button class="btn" id="addCat">+ 카테고리 추가</button>
+
+    <div class="legend">
+      카테고리에 세트 수를 넣으면 세트당 비용이 나와요 (예: 기본특전 200세트)<br>
+      품목의 카테고리 칸을 누르면 다른 카테고리로 옮길 수 있어요<br>
+      모든 내용은 이 브라우저에 자동 저장돼요
+    </div>
+  </div>
+
+  <script>
+    const KEY = 'pink-benefits-v1';
+    const TABS = { perk: '특전', dp: 'DP' };
+    const STAGES = ['진행 전', '주문서 작성 완료', '결제 완료', '배송 중 (제작 중)', '배송 완료'];
+    const UNITS = ['개', '세트', '장', '판'];
+
+    const uid = () => crypto.randomUUID();
+    const category = (id, name, tab, sets = 0, note = '') => ({ id, name, tab, sets, note });
+    const goods = (cat, name, qty = 0, cost = 0, more = {}) =>
+      ({ id: uid(), cat, name, qty, cost, unit: '개', note: '', stage: 0, ...more });
+
+    const defaults = {
+      v2: true,
+      v3: true,
+      v4: true,
+      v6: true,
+      v7: true,
+      v8: true,
+      v9: true,
+      v10: true,
+      v11: true,
+      current: 'perk',
+      cats: [
+        category('basic', '기본특전 (음료 특전)', 'perk', 200),
+        { ...category('highball', '하이볼 특전', 'perk'), noSets: true },
+        { ...category('pack', '포장비용', 'perk'), sumOnly: true },
+        category('outfit', '의상', 'dp'),
+        category('props', 'DP 소품', 'dp'),
+      ],
+      items: [
+        goods('basic', '종이컵', 500, 64000, { stage: 2 }),
+        goods('basic', '포토카드 3종 (셀카, 폴라로이드)', 200, 18590, {
+          unit: '세트', spec: '3종 1세트 × 200세트 (600장)', note: '아트지 300g 유광, 귀도리O (폴라로이드는 귀도리X)\n여분은 협력 및 이벤트에 사용',
+        }),
+        goods('basic', '도무송 1종', 1000, 29920, {
+          note: '14,960원 × 2\n얼굴\n사각스티커랑 같이 해서 1판에 12세트 예상',
+        }),
+        goods('highball', '사각재단 스티커 1종', 500, 6380, { note: '졸업사진' }),
+        goods('highball', '조각스티커 4종 (하나·두리)', 162, 72800, {
+          unit: '세트', spec: '2종 1세트 · 하나 2종 + 두리 2종', sheet: { per: 3, count: 27, need: { 하나: 50, 두리: 50 }, open: true },
+          note: '전신 51,200 + 반신 23,600 → 할인금액 72,800',
+        }),
+        ...['교복 (예약)', '교복 패치', '하나 이너', '하나 셔츠', '두리 유니폼', '모자'].map(n => goods('outfit', n)),
+        goods('props', '포카, 엽서 홀더'),
+      ],
+    };
+
+    let state;
+    try { state = JSON.parse(localStorage.getItem(KEY)) || defaults; } catch { state = defaults; }
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { } };
+
+    // 배송 중 단계 추가 (배송 완료 3 → 4), 협력진 칸 삭제, 포토카드 600장 → 3종 1세트 × 200세트 (한 번만)
+    if (!state.v2) {
+      for (const it of state.items) {
+        if (it.stage === 3) it.stage = 4;
+        delete it.crew;
+        it.unit ??= '개';
+        if (it.name.startsWith('포토카드') && it.qty === 600) {
+          Object.assign(it, { qty: 200, unit: '세트', note: it.note.replace('200장 × 3종', '3종 1세트 × 200세트 (600장)') });
+        }
+      }
+      state.v2 = true;
+    }
+    // 세트 설명 칸 추가: 포토카드 비고 첫 줄을 세트 칸으로 옮김 (한 번만)
+    if (!state.v3) {
+      for (const it of state.items) {
+        const [first, ...rest] = (it.note || '').split('\n');
+        if (!it.spec && first.includes('1세트')) { it.spec = first; it.note = rest.join('\n'); }
+      }
+      state.v3 = true;
+    }
+    // 조각스티커: 품목 · 세트 · 수량(세트) 세 칸으로 나눠 쓰기 (한 번만)
+    if (!state.v4) {
+      const it = state.items.find(x => x.name.startsWith('조각스티커'));
+      if (it) {
+        Object.assign(it, { name: '조각스티커 4종 (하나·두리)', spec: '2종 1세트 × 100세트 (하나 50 · 두리 50)', qty: 100, unit: '세트' });
+        it.note = it.note.split('\n').filter(l => !l.includes('각 50개씩 총 100개')).join('\n');
+      }
+      state.v4 = true;
+    }
+    // 판 정보 기능 빼기 (한 번만)
+    if (!state.v6) {
+      for (const it of state.items) {
+        delete it.perSheet; delete it.sheets;
+      }
+      state.v6 = true;
+    }
+    // 하이볼 특전에만 여분 표시 (수량 − 카테고리 세트 수) (한 번만)
+    if (!state.v7) {
+      const hb = state.cats.find(c => c.id === 'highball');
+      if (hb) hb.spare = true;
+      state.v7 = true;
+    }
+    // 포장비용은 럭드 포장 등 여러 곳에 나눠 쓰는 비용이라 소계만 표시 (한 번만)
+    if (!state.v8) {
+      const pack = state.cats.find(c => c.id === 'pack');
+      if (pack) { pack.sumOnly = true; pack.sets = 0; }
+      state.v8 = true;
+    }
+    // 조각스티커: 27판 주문 (1판 = 하나 3세트 + 두리 3세트), 판 표로 보기 (한 번만)
+    if (!state.v9) {
+      const it = state.items.find(x => x.name.startsWith('조각스티커'));
+      if (it) {
+        it.sheet = { per: 3, count: 27 };
+        Object.assign(it, { qty: 162, unit: '세트' });
+        if ((it.spec || '').startsWith('2종 1세트 × 100세트')) it.spec = '2종 1세트 · 하나 2종 + 두리 2종';
+        // 예전 판 구성(전신 14개 · 상반신 36개) 메모는 지금 구성과 달라서 뺌
+        it.note = (it.note || '').split('\n').filter(l => !l.includes('1판 14개') && !l.includes('전신 8판')).join('\n');
+      }
+      state.v9 = true;
+    }
+    // 필요 수는 그대로 하나 50 · 두리 50세트 (80세트는 여분 30 이상을 위한 것) → 세트 기준 160 → 100 되돌림 (한 번만)
+    if (!state.v10) {
+      const hb = state.cats.find(c => c.id === 'highball');
+      if (hb && hb.sets === 160) hb.sets = 100;
+      state.v10 = true;
+    }
+    // 하이볼 특전 세트 기준 칩 빼기: 필요 수는 조각스티커 표의 하나·두리 칸으로 옮김 (한 번만)
+    if (!state.v11) {
+      const hb = state.cats.find(c => c.id === 'highball');
+      const half = Math.ceil((hb?.sets || 100) / 2);
+      if (hb) { hb.noSets = true; hb.sets = 0; delete hb.spare; }
+      for (const it of state.items) {
+        if (!it.sheet) continue;
+        it.sheet.need ??= { 하나: half, 두리: half };
+        it.sheet.open ??= true;
+      }
+      state.v11 = true;
+    }
+    // 의상 말머리: "하나 이너" → [하나] 이너 처럼 이름 앞 하나/두리를 말머리로 옮김 (한 번만)
+    if (!state.v12) {
+      for (const it of state.items) {
+        if (it.cat !== 'outfit' || it.head) continue;
+        const m = (it.name || '').match(/^(하나|두리)\s+(.+)$/);
+        if (m) { it.head = m[1]; it.name = m[2]; }
+      }
+      state.v12 = true;
+    }
+    save();
+
+    const el =(tag, props = {}, ...children) => {
+      const node = Object.assign(document.createElement(tag), props);
+      node.append(...children);
+      return node;
+    };
+    const won = n => n.toLocaleString('ko-KR') + '원';
+    const toNum = v => Number(String(v).replace(/[^\d]/g, '')) || 0;
+    const autosize = ta => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
+
+    const itemsOf = catId => state.items.filter(it => it.cat === catId);
+    const catSum = catId => itemsOf(catId).reduce((s, it) => s + it.cost, 0);
+    const tabSum = tab => state.cats.filter(c => c.tab === tab).reduce((s, c) => s + catSum(c.id), 0);
+
+    // 엑셀처럼 "=14960*2", "=51200+23600" 같은 수식 계산 (+ − × ÷ 괄호만, ×·x·÷도 됨)
+    function calc(expr) {
+      const s = expr.replace(/[,\s]/g, '').replace(/[×xX]/g, '*').replace(/÷/g, '/');
+      let i = 0;
+      const num = () => {
+        if (s[i] === '(') { i++; const v = add(); if (s[i++] !== ')') throw new Error(); return v; }
+        if (s[i] === '-') { i++; return -num(); }
+        const m = s.slice(i).match(/^\d+(\.\d+)?/);
+        if (!m) throw new Error();
+        i += m[0].length;
+        return Number(m[0]);
+      };
+      const mul = () => { let v = num(); while (s[i] === '*' || s[i] === '/') v = s[i++] === '*' ? v * num() : v / num(); return v; };
+      const add = () => { let v = mul(); while (s[i] === '+' || s[i] === '-') v = s[i++] === '+' ? v + mul() : v - mul(); return v; };
+      const v = add();
+      if (i !== s.length || !isFinite(v)) throw new Error();
+      return Math.max(0, Math.round(v));
+    }
+
+    // 숫자 칸: 쉼표 붙여 보여주고 글자 길이에 맞춰 너비 조절, 바뀌면 계산만 다시 함
+    // "="로 시작하면 수식으로 보고 Enter나 다른 곳을 누를 때 계산. 수식은 저장돼서 칸을 누르면 다시 보임
+    function numberInput(obj, key, onChange = () => updateTotals()) {
+      const fKey = key + 'Formula';
+      const show = () => obj[key] ? obj[key].toLocaleString('ko-KR') : '';
+      const input = el('input', { value: show() });
+      const fit = () => { input.style.width = `calc(${Math.max(input.value.length, 2)}ch + 20px)`; };
+      const mark = () => {
+        if (obj[fKey]) { input.dataset.formula = ''; input.title = '수식 ' + obj[fKey]; }
+        else { delete input.dataset.formula; input.title = ''; }
+      };
+      input.onfocus = () => { if (obj[fKey]) { input.value = obj[fKey]; fit(); } };
+      input.oninput = () => {
+        if (input.value.trim().startsWith('=')) return fit();
+        delete obj[fKey];
+        obj[key] = toNum(input.value);
+        input.value = show();
+        mark(); fit(); save(); onChange();
+      };
+      input.onblur = () => {
+        const raw = input.value.trim();
+        if (raw.startsWith('=')) {
+          try { obj[key] = calc(raw.slice(1)); obj[fKey] = raw; } catch { /* 계산할 수 없는 수식이면 이전 값 유지 */ }
+          save(); onChange();
+        }
+        input.value = show();
+        mark(); fit();
+      };
+      input.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) input.blur(); };
+      mark(); fit();
+      return input;
+    }
+
+    // 고르는 칸: 보이는 글자 + 투명한 select 덮기
+    function selectPill(className, text, options, value, onPick) {
+      const select = el('select', { onchange: e => onPick(e.target.value) }, ...options);
+      select.value = value;
+      return el('label', { className: 'pill ' + className }, text, select);
+    }
+
+    function stagePill(it) {
+      const n = it.stage || 0;
+      return selectPill('stage s' + n, STAGES[n],
+        STAGES.map((name, i) => el('option', { value: i, textContent: name })), n,
+        v => { it.stage = Number(v); save(); render(); });
+    }
+
+    function newCategory(tab) {
+      const name = (prompt('새 카테고리 이름 (예: 포장비용)') || '').trim();
+      if (!name) return null;
+      const c = category(uid(), name, tab);
+      state.cats.push(c);
+      return c;
+    }
+
+    function catPill(it) {
+      const cur = state.cats.find(c => c.id === it.cat);
+      const options = Object.entries(TABS).map(([tab, label]) => el('optgroup', { label },
+        ...state.cats.filter(c => c.tab === tab).map(c => el('option', { value: c.id, textContent: c.name }))));
+      options.push(el('option', { value: '__new', textContent: '+ 새 카테고리' }));
+      return selectPill('cat-pill', (cur?.name || '카테고리') + ' ▾', options, it.cat, v => {
+        if (v === '__new') {
+          const c = newCategory(state.current);
+          if (!c) return render();
+          v = c.id;
+        }
+        it.cat = v; save(); render();
+      });
+    }
+
+    // 품목 옆 발주처: 이름을 누르면 사이트가 새 창으로 열림, ✎로 고치기 (이름을 비우면 삭제)
+    function vendorPill(it) {
+      const edit = () => {
+        const name = prompt('발주처 이름 (비우면 삭제)', it.vendor?.name || '');
+        if (name === null) return;
+        if (!name.trim()) { delete it.vendor; save(); render(); return; }
+        let url = prompt('발주처 사이트 주소 (없으면 비워두세요)', it.vendor?.url || '');
+        if (url === null) return;
+        url = url.trim();
+        if (url && !/^https?:\/\//.test(url)) url = 'https://' + url;
+        it.vendor = { name: name.trim(), url };
+        save(); render();
+      };
+      if (!it.vendor) return el('button', { className: 'vendor empty', textContent: '+ 발주처', onclick: edit });
+      const label = it.vendor.url
+        ? el('a', { className: 'vendor', href: it.vendor.url, target: '_blank', rel: 'noopener noreferrer', textContent: it.vendor.name + ' ↗', title: it.vendor.url })
+        : el('span', { className: 'vendor', textContent: it.vendor.name });
+      return el('span', { className: 'vendor-wrap' }, label, el('button', { className: 'del vendor-edit', textContent: '✎', title: '발주처 고치기', onclick: edit }));
+    }
+
+    function updateTotals() {
+      const perk = tabSum('perk'), dp = tabSum('dp');
+      document.getElementById('grand').textContent = won(perk + dp);
+      document.getElementById('sum-perk').textContent = won(perk);
+      document.getElementById('sum-dp').textContent = won(dp);
+      for (const [tab, label] of Object.entries(TABS)) {
+        const count = document.getElementById('tab-' + tab);
+        if (count) count.textContent = won(tabSum(tab));
+      }
+      const dpAll = document.getElementById('total-dp-all');
+      if (dpAll) dpAll.textContent = won(dp);
+      for (const c of state.cats) {
+        const sum = catSum(c.id);
+        const total = document.getElementById('total-' + c.id);
+        if (total) total.textContent = won(sum);
+        const box = document.getElementById('facts-' + c.id);
+        if (!box) continue;
+        const chip = box.querySelector('.sum');
+        if (chip) chip.textContent = `소계 ${won(sum)}`;
+        const per = box.querySelector('.per');
+        if (!per) continue;
+        per.hidden = !(c.sets && sum);
+        per.textContent = `세트당 ${won(Math.round(sum / (c.sets || 1)))}`;
+      }
+      for (const it of state.items) {
+        const unit = document.getElementById('unit-' + it.id);
+        if (!unit) continue;
+        unit.hidden = !(it.qty && it.cost);
+        // 여분: 여분 표시를 켠 카테고리(하이볼 특전)만, 수량 − 카테고리 세트 수
+        const spare = document.getElementById('spare-' + it.id);
+        if (spare) {
+          const c = state.cats.find(c => c.id === it.cat), diff = it.qty - (c?.sets || 0);
+          spare.hidden = !(c?.spare && c.sets && it.qty) || !!it.sheet; // 판 품목은 아래 표에 여분이 나옴
+          spare.className = 'chip' + (diff < 0 ? ' warn' : '');
+          spare.textContent = diff < 0 ? `${-diff}${it.unit || '개'} 부족` : `여분 ${diff}${it.unit || '개'}`;
+        }
+        unit.textContent = `${it.unit || '개'}당 ${won(Math.round(it.cost / (it.qty || 1)))}`;
+        if (it.sheet) fillSheet(it);
+      }
+    }
+
+    // 판으로 주문하는 품목: 1판에 하나·두리 각 per세트, 수량 = 판 수 × 1판 세트, 필요 수는 하나·두리 따로 적음
+    const MEMBERS = ['하나', '두리'];
+    const sheetQty = s => s.per * s.count * MEMBERS.length;
+    function fillSheet(it) {
+      const { per, count, need = {} } = it.sheet;
+      const got = per * count;
+      const cell = key => document.getElementById(`sheet-${it.id}-${key}`) || {};
+      const sign = d => (d > 0 ? '+' : '') + d;
+      const needSum = MEMBERS.reduce((s, m) => s + (need[m] || 0), 0);
+      const spareSum = got * MEMBERS.length - needSum;
+      MEMBERS.forEach((m, i) => {
+        const d = got - (need[m] || 0);
+        cell(`got-${i}`).textContent = got;
+        Object.assign(cell(`spare-${i}`), { textContent: d < 0 ? `${-d} 부족` : sign(d) }).classList?.toggle('warn', d < 0);
+      });
+      cell('got-sum').textContent = `${got * MEMBERS.length}세트`;
+      cell('need-sum').textContent = `${needSum}세트`;
+      Object.assign(cell('spare-sum'), { textContent: spareSum < 0 ? `${-spareSum}세트 부족` : `${sign(spareSum)}세트` }).classList?.toggle('warn', spareSum < 0);
+      const toggle = cell('toggle');
+      toggle.textContent = `나옴 ${got * MEMBERS.length} · 필요 ${needSum} · 여분 ${sign(spareSum)} ${it.sheet.open ? '▴' : '▾'}`;
+      toggle.classList?.toggle('warn', MEMBERS.some(m => got < (need[m] || 0)));
+      const qty = document.getElementById('qty-' + it.id);
+      if (qty) qty.value = it.qty.toLocaleString('ko-KR');
+      const perCost = document.getElementById(`sheet-${it.id}-cost`);
+      if (perCost) { perCost.hidden = !(count && it.cost); perCost.textContent = `판당 ${won(Math.round(it.cost / (count || 1)))}`; }
+    }
+
+    function sheetBox(it) {
+      const n = MEMBERS.length, per = it.sheet.per;
+      it.sheet.need ??= {};
+      const count = numberInput(it.sheet, 'count', () => { it.qty = sheetQty(it.sheet); updateTotals(); });
+      const cell = (cls, key, text = '') => el('div', { className: cls, id: key && `sheet-${it.id}-${key}`, textContent: text });
+      const row = (label, key, cls = '') => [
+        cell('rh', null, label), ...MEMBERS.map((_, i) => cell(cls, `${key}-${i}`)), cell(cls + ' sum', key + '-sum'),
+      ];
+      const grid = el('div', { className: 'sheet-grid', hidden: !it.sheet.open },
+        cell('th rh'), ...MEMBERS.map(m => cell('th', null, m)), cell('th', null, '합계'),
+        cell('rh', null, '1판'), ...MEMBERS.map(() => cell('', null, per)), cell('sum', null, `${per * n}세트 (${per * n * 2}개)`),
+        ...row('나옴', 'got'),
+        cell('rh', null, '필요'), ...MEMBERS.map(m => el('div', { className: 'need' }, numberInput(it.sheet.need, m))), cell('sum', 'need-sum'),
+        ...row('여분', 'spare', 'spare'),
+      );
+      const toggle = el('button', {
+        className: 'sheet-toggle', id: `sheet-${it.id}-toggle`, title: '표 접기 / 펴기',
+        onclick: () => { it.sheet.open = !it.sheet.open; grid.hidden = !it.sheet.open; save(); fillSheet(it); },
+      });
+      return el('div', { className: 'sheet' },
+        el('div', { className: 'sheet-head' },
+          el('label', { className: 'field' }, count, '판 주문'),
+          el('span', { className: 'chip', textContent: `1판 = ${MEMBERS.map(m => `${m} ${per}세트`).join(' + ')}` }),
+          el('span', { className: 'chip', id: `sheet-${it.id}-cost` }),
+          toggle,
+        ),
+        grid,
+      );
+    }
+
+
+    // 포장비용처럼 소계만 있는 카테고리: 럭드 기타 비용처럼 이름 + 금액 한 줄
+    function renderSimpleItem(it) {
+      const cost = numberInput(it, 'cost');
+      cost.classList.add('cost');
+      cost.placeholder = '금액 (원)';
+      return el('div', { className: 'simple-row' },
+        el('input', { value: it.name, placeholder: '항목', oninput: e => { it.name = e.target.value; save(); } }),
+        cost,
+        el('button', {
+          className: 'del', textContent: '×', title: '삭제',
+          onclick: () => {
+            if (!confirm(`"${it.name || '이 항목'}" 삭제할까요?`)) return;
+            state.items = state.items.filter(x => x !== it); save(); render();
+          },
+        }),
+      );
+    }
+
+    function renderItem(it) {
+      const note = el('textarea', {
+        className: 'note', rows: 1, value: it.note, placeholder: '비고',
+        oninput: e => { it.note = e.target.value; autosize(e.target); save(); },
+      });
+      requestAnimationFrame(() => autosize(note));
+      const qty = numberInput(it, 'qty');
+      qty.id = 'qty-' + it.id;
+      if (it.sheet) {
+        it.qty = sheetQty(it.sheet); qty.value = it.qty.toLocaleString('ko-KR');
+        qty.readOnly = true; qty.title = '판 수로 계산돼요 (판 수 × 1판 세트)';
+      }
+      return el('div', { className: 'item' },
+        el('div', { className: 'item-head' },
+          el('input', { className: 'name', value: it.name, placeholder: '품목', oninput: e => { it.name = e.target.value; save(); } }),
+          catPill(it),
+          vendorPill(it),
+          el('button', {
+            className: 'del', textContent: '×', title: '삭제',
+            onclick: () => {
+              if (!confirm(`"${it.name || '이 품목'}" 삭제할까요?`)) return;
+              state.items = state.items.filter(x => x !== it); save(); render();
+            },
+          }),
+        ),
+        el('label', { className: 'spec-row' }, '세트', el('input', {
+          className: 'spec', value: it.spec || '', placeholder: '예: 3종 1세트 × 200세트 (600장)',
+          oninput: e => { it.spec = e.target.value; save(); },
+        })),
+        el('div', { className: 'fields' },
+          el('div', { className: 'field' }, qty, el('button', {
+            className: 'unit-toggle', textContent: it.unit || '개', title: '단위 바꾸기 (개 → 세트 → 장 → 판)',
+            onclick: () => { it.unit = UNITS[(UNITS.indexOf(it.unit || '개') + 1) % UNITS.length]; save(); render(); },
+          })),
+          el('label', { className: 'field' }, numberInput(it, 'cost'), '원'),
+          el('span', { className: 'chip', id: 'unit-' + it.id }),
+          el('span', { className: 'chip', id: 'spare-' + it.id, hidden: true }),
+          stagePill(it),
+        ),
+        it.sheet ? sheetBox(it) : '',
+        note,
+      );
+    }
+
+    // 의상 말머리: 누르면 목록에서 [하나] / [두리] / 없음 고르기
+    const HEADS = ['', '하나', '두리'];
+    function headPill(it) {
+      const n = Math.max(0, HEADS.indexOf(it.head || ''));
+      return selectPill('head h' + n, n ? HEADS[n] : '말머리',
+        HEADS.map((h, i) => el('option', { value: i, textContent: h || '없음' })), n,
+        v => { it.head = HEADS[v]; save(); render(); });
+    }
+
+    // DP 탭 품목: 이름 · 금액 · 진행상황 · × 한 줄 (전시용이라 수량·세트 계산 없음)
+    function renderDpRow(it) {
+      const cost = numberInput(it, 'cost');
+      cost.classList.add('cost');
+      cost.placeholder = '0';
+      return el('div', { className: 'dp-row' },
+        it.cat === 'outfit' && !it.head ? headPill(it) : '',
+        el('input', { className: 'name', value: it.name, placeholder: '품목', oninput: e => { it.name = e.target.value; save(); } }),
+        cost, el('span', { className: 'won', textContent: '원' }),
+        stagePill(it),
+        el('button', {
+          className: 'del', textContent: '×', title: '삭제',
+          onclick: () => {
+            if (!confirm(`"${it.name || '이 품목'}" 삭제할까요?`)) return;
+            state.items = state.items.filter(x => x !== it); save(); render();
+          },
+        }),
+      );
+    }
+
+    const dpAdd = (catId, head = '') => el('button', {
+      className: 'dp-add', textContent: '+ 품목',
+      onclick: () => {
+        state.items.push(goods(catId, '', 0, 0, head ? { head } : {})); save(); render();
+        [...document.querySelectorAll('.dp-row .name')].find(i => !i.value)?.focus();
+      },
+    });
+
+    // 의상: 하나 | 두리 세로 두 칸, 말머리 없는 품목은 아래 공통에 (말머리를 고르면 그 칸으로 감)
+    function outfitCols(c) {
+      const items = itemsOf(c.id);
+      const col = (head, i) => el('div', { className: 'dp-col' },
+        el('div', { className: 'dp-col-title h' + i, textContent: head }),
+        ...items.filter(it => it.head === head).map(renderDpRow),
+        dpAdd(c.id, head),
+      );
+      const common = items.filter(it => !it.head);
+      return [
+        el('div', { className: 'dp-cols' }, col('하나', 1), col('두리', 2)),
+        el('div', { className: 'dp-common-title', textContent: '공통 · 말머리를 고르면 하나/두리 칸으로 옮겨져요' }),
+        ...common.map(renderDpRow),
+        dpAdd(c.id),
+      ];
+    }
+
+    // DP 탭: 패널 하나에 카테고리를 작은 소제목(✿)으로
+    function renderDp(box) {
+      const panel = el('div', { className: 'panel' }, el('div', { className: 'panel-title', textContent: 'DP' }));
+      for (const c of state.cats.filter(c => c.tab === 'dp')) {
+        panel.append(
+          el('div', { className: 'dp-sub' },
+            el('span', {
+              className: 'text', textContent: c.name, title: '눌러서 이름 바꾸기',
+              onclick: () => { const v = (prompt('소제목 이름', c.name) || '').trim(); if (v) { c.name = v; save(); render(); } },
+            }),
+            el('span', { className: 'subsum', id: 'total-' + c.id }),
+            el('button', {
+              className: 'del', textContent: '×', title: '소제목 삭제',
+              onclick: () => {
+                const n = itemsOf(c.id).length;
+                if (!confirm(n ? `"${c.name}"와 안의 품목 ${n}개를 모두 삭제할까요?` : `"${c.name}" 소제목을 삭제할까요?`)) return;
+                state.cats = state.cats.filter(x => x !== c);
+                state.items = state.items.filter(it => it.cat !== c.id);
+                save(); render();
+              },
+            }),
+          ),
+          ...(c.id === 'outfit' ? outfitCols(c) : [...itemsOf(c.id).map(renderDpRow), dpAdd(c.id)]),
+        );
+      }
+      panel.append(el('div', { className: 'cat-total' }, el('span', { textContent: 'DP 합계' }), el('span', { id: 'total-dp-all' })));
+      box.append(panel);
+    }
+
+    function render() {
+      const tabs = document.getElementById('tabs');
+      tabs.innerHTML = '';
+      for (const [tab, label] of Object.entries(TABS)) {
+        tabs.append(el('button', {
+          className: 'tab' + (state.current === tab ? ' active' : ''),
+          onclick: () => { state.current = tab; save(); render(); },
+        }, label, el('span', { className: 'count', id: 'tab-' + tab })));
+      }
+
+      const box = document.getElementById('cats');
+      box.innerHTML = '';
+      document.getElementById('addCat').textContent = state.current === 'dp' ? '+ 소제목 추가' : '+ 카테고리 추가';
+      document.querySelector('.legend').hidden = state.current === 'dp';
+      if (state.current === 'dp') { renderDp(box); updateTotals(); return; }
+      for (const c of state.cats.filter(c => c.tab === state.current)) {
+        box.append(el('div', { className: 'panel' },
+          el('div', { className: 'cat-head' },
+            el('span', {
+              className: 'cat-name', textContent: c.name, title: '눌러서 이름 바꾸기',
+              onclick: () => { const v = (prompt('카테고리 이름', c.name) || '').trim(); if (v) { c.name = v; save(); render(); } },
+            }),
+            el('button', {
+              className: 'del', textContent: '×', title: '카테고리 삭제',
+              onclick: () => {
+                const n = itemsOf(c.id).length;
+                if (!confirm(n ? `"${c.name}"와 안의 품목 ${n}개를 모두 삭제할까요?` : `"${c.name}" 카테고리를 삭제할까요?`)) return;
+                state.cats = state.cats.filter(x => x !== c);
+                state.items = state.items.filter(it => it.cat !== c.id);
+                save(); render();
+              },
+            }),
+          ),
+          // 세트 기준은 제목 아래, 소계는 모든 카테고리 맨 아래 줄 (럭드 기타 비용처럼)
+          c.sumOnly || c.noSets
+            ? el('div', { className: 'cat-facts', id: 'facts-' + c.id })
+            : el('div', { className: 'cat-facts', id: 'facts-' + c.id },
+              el('label', { className: 'field' }, numberInput(c, 'sets'), '세트 기준'),
+              el('span', { className: 'chip per' }),
+            ),
+          ...itemsOf(c.id).map(c.sumOnly ? renderSimpleItem : renderItem),
+          el('div', { className: 'cat-total' }, el('span', { textContent: '소계' }), el('span', { id: 'total-' + c.id })),
+          el('button', {
+            className: 'btn ghost', textContent: '+ 품목 추가',
+            onclick: () => {
+              state.items.push(goods(c.id, ''));
+              save(); render();
+              [...document.querySelectorAll('.item .name')].find(i => !i.value)?.focus();
+            },
+          }),
+        ));
+      }
+      updateTotals();
+    }
+
+    document.getElementById('addCat').onclick = () => {
+      if (newCategory(state.current)) { save(); render(); }
+    };
+
+    render();
+  </script>
+</body>
+
+</html>

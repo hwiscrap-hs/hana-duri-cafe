@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_blank"><!-- 다른 계산기 · 정산 링크는 새 창으로 -->
+<title>생일카페 정산</title>
+<style>
+  :root {
+    --bg: #fff5f8;
+    --card: #ffffff;
+    --pink: #ff6fa5;
+    --pink-soft: #ffd6e5;
+    --pink-mid: #ffb3cf;
+    --pink-faint: #ffeef4;
+    --text: #4a2b37;
+    --muted: #b07a8f;
+    --loss: #9c8a91;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+    letter-spacing: -0.03em;
+  }
+  input, button { letter-spacing: inherit; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; color: var(--pink); }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+
+  .nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .nav a {
+    display: block; padding: 12px 6px; border: 2px solid var(--pink-soft); border-radius: 14px; background: var(--card);
+    color: var(--pink); font-size: 15px; font-weight: 700; text-align: center; text-decoration: none;
+  }
+  .nav a small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+  .nav a:hover { background: var(--pink-faint); }
+
+  .panel {
+    background: var(--card); border-radius: 18px; padding: 16px 18px; margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(255, 111, 165, .08);
+  }
+  .panel-title { font-size: 17px; font-weight: 700; text-align: center; margin: 8px 0 10px; }
+  .panel-title::before { content: "♡ "; color: var(--pink); }
+  .panel-title .memo { font-size: 13px; font-weight: 400; color: var(--muted); }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--pink-faint); border-radius: 12px; padding: 10px 12px; }
+  .stat .label { font-size: 12px; color: var(--muted); }
+  .stat .value { font-size: 18px; font-weight: 700; margin-top: 6px; }
+  .stat.wide { grid-column: 1 / -1; background: var(--pink); color: #fff; text-align: center; }
+  .stat.wide .label { color: #fff; opacity: .85; }
+  .stat.wide .value { font-size: 22px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; }
+  th:first-child { width: 31%; }
+  table { table-layout: fixed; }
+  .full-memo { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; }
+  th { font-size: 12px; font-weight: 400; color: var(--muted); text-align: right; padding: 0 0 6px; }
+  th:first-child, td:first-child { text-align: left; }
+  td { padding: 9px 0; border-top: 1px dashed var(--pink-soft); text-align: right; white-space: nowrap; }
+  td:first-child { font-weight: 600; }
+  td a { color: inherit; text-decoration: none; }
+  td small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
+  tr.total td { border-top: 2px solid var(--pink-soft); font-weight: 700; }
+  tr.split td { border-top: none; padding: 2px 0; font-size: 13px; color: var(--muted); font-weight: 400; }
+  tr.split td:first-child { padding-left: 4px; }
+  .plus { color: var(--pink); }
+  .minus { color: var(--loss); }
+
+  .sales { display: flex; flex-direction: column; gap: 10px; }
+  .sale { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+  .sale .name { flex: 1; font-weight: 600; }
+  .sale input {
+    width: 80px; border: 1.5px solid var(--pink-soft); border-radius: 10px; padding: 5px 8px;
+    font: inherit; font-size: 14px; text-align: right; background: var(--pink-faint); color: var(--text);
+  }
+  .sale input:focus { outline: none; border-color: var(--pink); background: #fff; }
+  .sale span { font-size: 12px; color: var(--muted); }
+  .reserve-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 22px; }
+  .sales[hidden] { display: none; }
+  .reserve-group { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--muted); }
+  .reserve-group b { font-size: 14px; color: var(--text); margin-right: 4px; }
+  .reserve-group .day { margin-left: 6px; }
+  .reserve-group input {
+    width: 40px; border: 1.5px solid var(--pink-soft); border-radius: 10px; padding: 5px 6px; margin-left: 2px;
+    font: inherit; font-size: 14px; text-align: right; background: var(--pink-faint); color: var(--text);
+  }
+  .reserve-group input:focus { outline: none; border-color: var(--pink); background: #fff; }
+  .sub-title { display: flex; align-items: baseline; gap: 4px; }
+  .sub-title b { margin-left: auto; color: var(--pink); font-size: 13px; }
+  .sub-title { font-size: 13px; font-weight: 700; color: var(--pink); margin: 16px 0 8px; padding-top: 12px; border-top: 1px dashed var(--pink-soft); }
+  button.sub-title {
+    width: 100%; background: none; border-left: 0; border-right: 0; border-bottom: 0; padding-left: 0; padding-right: 0;
+    font-family: inherit; cursor: pointer; text-align: left;
+  }
+  .sub-title i { font-style: normal; font-size: 10px; margin-right: 2px; }
+  .sub-title span { font-weight: 400; color: var(--muted); }
+
+
+ font-size: 12px; padding: 2px 9px; border-radius: 99px; background: var(--pink-faint); color: var(--pink); }
+  .notice { font-size: 13px; color: var(--muted); text-align: center; padding: 6px 0; }
+  .notice a { color: var(--pink); font-weight: 600; }
+
+  .income-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .income-row input {
+    flex: 1; min-width: 0; border: 1.5px solid var(--pink-soft); border-radius: 10px; padding: 7px 10px;
+    font: inherit; font-size: 14px; background: var(--pink-faint); color: var(--text);
+  }
+  .income-row input:focus { outline: none; border-color: var(--pink); background: #fff; }
+  .income-row .amount { flex: 0 0 120px; text-align: right; }
+  .list-total {
+    display: flex; justify-content: space-between; width: 100%; border: 0; border-radius: 10px;
+    background: var(--pink-faint); padding: 10px 12px; margin: 8px 0 6px;
+    font: inherit; font-size: 14px; font-weight: 700; color: var(--text); cursor: pointer;
+  }
+  .list-total span:last-child { color: var(--pink); }
+  .refund {
+    flex-shrink: 0; border: 1px dashed var(--pink-soft); border-radius: 99px; background: none; color: var(--pink-mid);
+    padding: 3px 8px; font: inherit; font-size: 11px; cursor: pointer; white-space: nowrap;
+  }
+  .paid {
+    flex-shrink: 0; border: 1px dashed var(--pink-soft); border-radius: 99px; background: none; color: var(--pink-mid);
+    padding: 3px 8px; font: inherit; font-size: 11px; cursor: pointer; white-space: nowrap;
+  }
+  .paid.on { border-style: solid; border-color: var(--pink); background: var(--pink); color: #fff; font-weight: 600; }
+  .refund.pending { border-style: solid; border-color: var(--pink-mid); background: var(--pink-soft); color: var(--pink); font-weight: 600; }
+  .refund.done { border-style: solid; border-color: var(--loss); background: #f3e6eb; color: var(--loss); font-weight: 600; }
+  .income-row .amount { flex-basis: 90px; }
+  .income-row { gap: 6px; }
+  .empty { font-size: 13px; color: var(--muted); text-align: center; padding: 6px 0; }
+  .del { border: none; background: none; color: var(--pink-mid); cursor: pointer; padding: 0 3px; font-size: 18px; }
+  .del:hover { color: var(--pink); }
+  .btn {
+    border: none; border-radius: 10px; background: var(--pink); color: #fff; padding: 9px 14px;
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px;
+  }
+  .legend { font-size: 12px; color: var(--muted); margin-top: 24px; text-align: center; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>정산 ♡</h1>
+  <div class="sub">생일카페 전체 정산</div>
+
+  <nav class="nav">
+    <a href="luckydraw.html">럭키드로우<small>계산기</small></a>
+    <a href="gacha.html">가챠<small>계산기</small></a>
+    <a href="benefits.html">특전 · DP<small>계산기</small></a>
+  </nav>
+
+  <div class="panel">
+    <div class="panel-title">전체 <span class="memo">(판매 기준)</span></div>
+    <div class="stats">
+      <div class="stat wide" id="profitBox"><div class="label">순이익</div><div class="value" id="profit"></div></div>
+      <div class="stat"><div class="label">총 사용금액</div><div class="value" id="spent"></div></div>
+      <div class="stat"><div class="label">수입</div><div class="value" id="income"></div></div>
+    </div>
+    <div class="full-memo" id="fullMemo"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">항목별</div>
+    <table>
+      <thead><tr><th></th><th>사용금액</th><th>수입</th><th>손익</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">판매 수량</div>
+    <div class="sales" id="sales"></div>
+    <button class="sub-title" id="reserveToggle"><i id="reserveArrow"></i>예약금 <span>(1명 3,000원 · tmm 수수료 5%)</span><b id="reserveSum"></b></button>
+    <div class="sales" id="reserve"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">기타 지출</div>
+    <div id="list-expenses"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">기타 수입</div>
+    <div id="list-incomes"></div>
+  </div>
+
+  <div class="legend">
+    각 계산기에 적은 내용을 모아서 보여줘요 (같은 브라우저에서 열어야 해요)<br>
+    계산기에서 고친 뒤 이 페이지로 돌아오면 자동으로 다시 계산돼요<br>
+    럭키드로우 1장 · 가챠 1회 3,000원
+  </div>
+</div>
+
+<script>
+const PRICE = 3000;      // 럭드 1장 · 가챠 1회 가격
+const DEPOSIT = 3000;    // 예약금 1명
+const FEE_RATE = 5;      // tmm 수수료 % (6명 18,000원 → 정산 가능 17,100원). 휴대폰 결제(9%)는 기타 지출로
+const GACHA_CAPSULES = 200;
+const KEY = 'pink-summary-v1';
+const PAGES = {
+  luckydraw: { key: 'pink-luckydraw-v1', href: 'luckydraw.html', name: '럭키드로우' },
+  gacha: { key: 'pink-gacha-v1', href: 'gacha.html', name: '가챠' },
+  benefits: { key: 'pink-benefits-v1', href: 'benefits.html', name: '특전 · DP' },
+};
+
+const load = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
+let mine = load(KEY) || { luckydrawSold: null, gachaSold: null };
+mine.incomes ??= [];
+mine.expenses ??= [{ name: '트위터 블루', amount: 0 }, { name: '카페 비용', amount: 0 }];
+mine.open ??= {};
+mine.reserve ??= { crewSat: null, crewSun: null, tableSat: null, tableSun: null };
+delete mine.feeRate;
+for (const x of mine.expenses) if (x.refund === true) x.refund = 'pending'; // 예전 켜기/끄기 → 반환 예정
+const saveMine = () => { try { localStorage.setItem(KEY, JSON.stringify(mine)); } catch {} };
+
+const el = (tag, props = {}, ...children) => {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children);
+  return node;
+};
+const won = n => (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('ko-KR') + '원';
+const sum = (list, f) => (list || []).reduce((s, x) => s + (f(x) || 0), 0);
+
+// 각 계산기 저장 내용 → 사용금액 · 수입
+const PAID_STAGE = 2; // 계산기 진행상황: 0 진행 전 · 1 주문서 작성 완료 · 2 결제 완료 · …
+const paidOf = (list, cost) => sum(list, x => (x.stage || 0) >= PAID_STAGE ? cost(x) : 0);
+
+function collect() {
+  const ld = load(PAGES.luckydraw.key), ga = load(PAGES.gacha.key), be = load(PAGES.benefits.key);
+  const rows = [];
+
+  if (ld) {
+    const tickets = sum(ld.prizes, p => p.winners);
+    const sold = mine.luckydrawSold ?? 0;
+    // 예약금은 럭드 1장으로 돌려줌 → 예약 인원만큼은 현장에서 팔 수 있는 장수에서 빠지고, 돈은 예약금 줄에 잡힘
+    const reserved = sum(Object.values(mine.reserve), n => n);
+    rows.push({ page: 'luckydraw', name: '럭키드로우',
+      note: reserved ? `판매 ${sold} + 예약 교환 ${reserved} / ${tickets}장` : `${sold} / ${tickets}장`,
+      spent: sum(ld.prizes, p => p.cost) + sum(ld.extras, x => x.cost), paid: paidOf(ld.prizes, p => p.cost),
+      income: sold * PRICE, max: Math.max(tickets - reserved, 0) });
+  }
+  if (ga) {
+    const sold = mine.gachaSold ?? 0;
+    rows.push({ page: 'gacha', name: '가챠', note: `${sold} / ${GACHA_CAPSULES}개`,
+      spent: sum(ga.items, it => it.cost) + sum(ga.extras, x => x.cost), paid: paidOf(ga.items, it => it.cost), income: sold * PRICE, max: GACHA_CAPSULES });
+  }
+  const extraIn = sum(mine.incomes, x => x.amount);
+  const extraOut = sum(mine.expenses, x => x.refund === 'done' ? 0 : x.amount);
+  const pending = sum(mine.expenses, x => x.refund === 'pending' ? x.amount : 0), done = sum(mine.expenses, x => x.refund === 'done' ? x.amount : 0);
+  const outPaid = sum(mine.expenses, x => x.paid && x.refund !== 'done' ? x.amount : 0);
+  if (mine.expenses.length) rows.push({ page: null, name: '기타 지출', spent: extraOut, paid: outPaid, income: 0,
+    note: [`${mine.expenses.length}건`, pending && `반환 예정 ${won(pending)} 포함`, done && `반환 완료 ${won(done)} 제외`].filter(Boolean).join(' · ') });
+  // 예약금: 인원 × 3,000원에서 tmm 수수료를 뺀 정산 가능 금액
+  const people = sum(Object.values(mine.reserve), n => n);
+  if (people) {
+    const gross = people * DEPOSIT, net = Math.round(gross * (1 - FEE_RATE / 100));
+    rows.push({ page: null, name: '예약금', note: `${people}명 · 수수료 ${won(gross - net)} 제외`, spent: 0, paid: 0, income: net });
+  }
+  if (mine.incomes.length) rows.push({ page: null, name: '기타 수입', note: `${mine.incomes.length}건`, spent: 0, paid: 0, income: extraIn });
+  if (be) {
+    for (const [tab, name] of [['perk', '특전'], ['dp', 'DP']]) {
+      const cats = new Set(be.cats.filter(c => c.tab === tab).map(c => c.id));
+      const items = be.items.filter(it => cats.has(it.cat));
+      rows.push({ page: 'benefits', name, note: '무료 증정 · 연출', spent: sum(items, it => it.cost), paid: paidOf(items, it => it.cost), income: 0 });
+    }
+  }
+  return { rows, opened: { luckydraw: !!ld, gacha: !!ga, benefits: !!be } };
+}
+
+document.getElementById('reserveToggle').onclick = () => { mine.open.reserve = !mine.open.reserve; saveMine(); render(); };
+
+// 예약금 입력: 선예약 / 일반 × 토 / 일 한 줄, 제목 옆에 정산 가능 금액
+function renderReserve() {
+  const box = document.getElementById('reserve');
+  if (!box.childElementCount) {
+    const num = key => {
+      const input = el('input', {
+        inputMode: 'numeric', placeholder: '0', value: mine.reserve[key] ?? '',
+        oninput: () => {
+          const v = input.value.replace(/[^\d]/g, '');
+          input.value = v;
+          mine.reserve[key] = v === '' ? null : Number(v);
+          saveMine(); render();
+        },
+      });
+      return input;
+    };
+    const group = (label, sat, sun) => el('span', { className: 'reserve-group' },
+      el('b', { textContent: label }), '토', num(sat), '명', el('span', { className: 'day', textContent: '일' }), num(sun), '명');
+    box.append(el('div', { className: 'reserve-row' },
+      group('선예약', 'crewSat', 'crewSun'), group('일반', 'tableSat', 'tableSun')));
+  }
+  const people = sum(Object.values(mine.reserve), n => n);
+  const net = Math.round(people * DEPOSIT * (1 - FEE_RATE / 100));
+  document.getElementById('reserveSum').textContent = people ? `${people}명 · 정산 ${won(net)}` : '';
+  // 예약금 줄은 제목을 눌러 열고 닫기
+  box.hidden = !mine.open.reserve;
+  document.getElementById('reserveArrow').textContent = mine.open.reserve ? '▾' : '▸';
+}
+
+// 순이익 칸 색: 마이너스·0이면 연한 핑크, 수익이 날수록 (완판 순이익에 가까울수록) 진분홍
+function paintProfit(profit, fullProfit) {
+  const t = profit <= 0 ? 0 : Math.min(profit / Math.max(fullProfit, 1), 1);
+  const from = [255, 227, 238], to = [255, 111, 165]; // #ffe3ee → #ff6fa5
+  const mix = from.map((c, i) => Math.round(c + (to[i] - c) * t));
+  const box = document.getElementById('profitBox');
+  box.style.background = `rgb(${mix})`;
+  box.style.color = t > 0.5 ? '#fff' : 'var(--pink)';
+  box.querySelector('.label').style.color = t > 0.5 ? '#fff' : 'var(--muted)';
+}
+
+function render() {
+  const { rows, opened } = collect();
+  const spent = sum(rows, r => r.spent), income = sum(rows, r => r.income), profit = income - spent;
+  document.getElementById('spent').textContent = won(spent);
+  document.getElementById('income').textContent = won(income);
+  document.getElementById('profit').textContent = won(profit);
+  // 참고용: 럭드 · 가챠가 다 팔렸을 때 순이익 (기타 수입 포함)
+  const fullIncome = sum(rows, r => r.max ? r.max * PRICE : r.income);
+  paintProfit(profit, fullIncome - spent);
+  const pending = sum(mine.expenses, x => x.refund === 'pending' ? x.amount : 0);
+  document.getElementById('fullMemo').textContent = `완판 시 순이익 ${won(fullIncome - spent)} (수입 ${won(fullIncome)})`
+    + (pending ? ` · 반환 예정 ${won(pending)}은 돌려받으면 사용금액에서 빠져요` : '');
+
+  const tbody = document.getElementById('rows');
+  tbody.innerHTML = '';
+  for (const r of rows) {
+    const diff = r.income - r.spent;
+    tbody.append(el('tr', {},
+      el('td', {}, r.page ? el('a', { href: PAGES[r.page].href }, r.name + ' ›') : r.name, el('small', { textContent: r.note })),
+      el('td', {}, won(r.spent), ...(r.spent - r.paid ? [el('small', { textContent: `결제 전 ${won(r.spent - r.paid)}` })] : [])),
+      el('td', { textContent: r.income ? won(r.income) : '-' }),
+      el('td', { className: diff < 0 ? 'minus' : 'plus', textContent: won(diff) }),
+    ));
+  }
+  tbody.append(el('tr', { className: 'total' },
+    el('td', { textContent: '합계' }),
+    el('td', { textContent: won(spent) }),
+    el('td', { textContent: won(income) }),
+    el('td', { className: profit < 0 ? 'minus' : 'plus', textContent: won(profit) }),
+  ));
+  const paid = sum(rows, r => r.paid);
+  for (const [label, amount] of [['결제 완료', paid], ['결제 전', spent - paid]]) {
+    tbody.append(el('tr', { className: 'split' },
+      el('td', { textContent: label }), el('td', { textContent: won(amount) }), el('td'), el('td'),
+    ));
+  }
+
+  // 아직 한 번도 안 열어본 계산기는 저장된 내용이 없어서 안내
+  for (const [page, info] of Object.entries(PAGES)) {
+    if (opened[page]) continue;
+    tbody.append(el('tr', {}, el('td', { colSpan: 4, className: 'notice' },
+      el('a', { href: info.href, textContent: info.name }), ' 계산기를 한 번 열면 여기에 더해져요')));
+  }
+
+  const sales = document.getElementById('sales');
+  if (!sales.childElementCount) {
+    for (const [key, label, unit] of [['luckydrawSold', '럭키드로우 (현장 판매)', '장'], ['gachaSold', '가챠', '개']]) {
+      const input = el('input', {
+        inputMode: 'numeric', placeholder: '0', value: mine[key] ?? '',
+        oninput: () => {
+          const v = input.value.replace(/[^\d]/g, '');
+          input.value = v;
+          mine[key] = v === '' ? null : Number(v);
+          saveMine(); render();
+        },
+      });
+      sales.append(el('label', { className: 'sale' },
+        el('span', { className: 'name', textContent: label }), input, el('span', { id: 'max-' + key })));
+    }
+  }
+
+  renderReserve();
+
+  const max = Object.fromEntries(rows.filter(r => r.max).map(r => [r.page, r.max]));
+  document.getElementById('max-luckydrawSold').textContent = `/ ${max.luckydraw ?? '-'}장`;
+  document.getElementById('max-gachaSold').textContent = `/ ${max.gacha ?? '-'}개`;
+}
+
+// 기타 지출 · 기타 수입: 이름 + 금액 줄. 합계 줄을 누르면 상세를 열고 닫음
+const LISTS = {
+  expenses: { empty: '트위터 블루, 카페 비용처럼 계산기에 없는 지출을 적어주세요', add: '+ 지출 추가' },
+  incomes: { empty: '럭드 · 가챠 말고 들어온 돈을 적어주세요', add: '+ 수입 추가' },
+};
+// 합계 (반환 완료는 빼고, 반환 예정은 포함해서 옆에 따로 표시)
+const REFUND = { pending: '반환 예정', done: '반환 완료' };
+const NEXT_REFUND = { undefined: 'pending', pending: 'done', done: undefined };
+const listTotal = list => {
+  const pending = sum(list, x => x.refund === 'pending' ? x.amount : 0);
+  return won(sum(list, x => x.refund === 'done' ? 0 : x.amount)) + (pending ? ` (반환 예정 ${won(pending)} 포함)` : '');
+};
+function renderList(key) {
+  const list = mine[key], box = document.getElementById('list-' + key), open = !!mine.open[key];
+  box.innerHTML = '';
+  box.append(el('button', {
+    className: 'list-total', onclick: () => { mine.open[key] = !open; saveMine(); renderList(key); },
+  }, el('span', { textContent: `${open ? '▾' : '▸'} 합계 · ${list.length}건` }), el('span', { textContent: listTotal(list) })));
+  if (!open) return;
+  if (!list.length) box.append(el('div', { className: 'empty', textContent: LISTS[key].empty }));
+  list.forEach((x, i) => {
+    const amount = el('input', {
+      className: 'amount', inputMode: 'numeric', placeholder: '금액 (원)', value: x.amount ? x.amount.toLocaleString('ko-KR') : '',
+      oninput: () => {
+        x.amount = Number(amount.value.replace(/[^\d]/g, '')) || 0;
+        amount.value = x.amount ? x.amount.toLocaleString('ko-KR') : '';
+        box.querySelector('.list-total span:last-child').textContent = listTotal(list);
+        saveMine(); render();
+      },
+    });
+    box.append(el('div', { className: 'income-row' },
+      el('input', { value: x.name, placeholder: '항목', oninput: e => { x.name = e.target.value; saveMine(); } }),
+      amount,
+      ...(key === 'expenses' ? [el('button', {
+        className: 'paid' + (x.paid ? ' on' : ''), textContent: x.paid ? '결제 완료' : '결제 전', title: '누르면 결제 전 ↔ 결제 완료',
+        onclick: () => { x.paid = !x.paid; saveMine(); renderList(key); render(); },
+      }), el('button', {
+        className: 'refund ' + (x.refund || ''), textContent: REFUND[x.refund] || '반환 예정',
+        title: '보증금처럼 돌려받을 돈: 누를 때마다 반환 예정 → 반환 완료 → 해제',
+        onclick: () => { x.refund = NEXT_REFUND[x.refund]; if (!x.refund) delete x.refund; saveMine(); renderList(key); render(); },
+      })] : []),
+      el('button', {
+        className: 'del', textContent: '×', title: '삭제',
+        onclick: () => { if (confirm(`"${x.name || '이 항목'}" 삭제할까요?`)) { list.splice(i, 1); saveMine(); renderList(key); render(); } },
+      }),
+    ));
+  });
+  box.append(el('button', {
+    className: 'btn', textContent: LISTS[key].add,
+    onclick: () => {
+      list.push({ name: '', amount: 0 });
+      saveMine(); renderList(key); render();
+      [...box.querySelectorAll('.income-row input:first-child')].pop()?.focus();
+    },
+  }));
+}
+renderList('expenses');
+renderList('incomes');
+
+// 다른 계산기에서 고치고 돌아오면 다시 계산
+addEventListener('pageshow', render);
+addEventListener('focus', render);
+addEventListener('storage', render);
+render();
+</script>
+</body>
+</html>
