@@ -139,6 +139,8 @@
     font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px;
   }
   .legend { font-size: 12px; color: var(--muted); margin-top: 24px; text-align: center; line-height: 1.8; }
+  .sync-export { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 16px; font-size: 12px; color: var(--muted); }
+  .sync-export button { font: inherit; font-size: 13px; font-weight: 700; background: var(--pink); color: #fff; border: 0; border-radius: 99px; padding: 7px 14px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -151,6 +153,11 @@
     <a href="gacha.html">가챠<small>계산기</small></a>
     <a href="benefits.html">특전 · DP<small>계산기</small></a>
   </nav>
+
+  <div class="sync-export">
+    <button id="syncExport" type="button">동기화 파일 저장</button>
+    <span id="syncMsg">누른 다음 Claude한테 "동기화"라고 말하면 공유 링크에 올라가요.</span>
+  </div>
 
   <div class="panel">
     <div class="panel-title">전체 <span class="memo">(판매 기준)</span></div>
@@ -444,6 +451,18 @@ addEventListener('pageshow', render);
 addEventListener('focus', render);
 addEventListener('storage', render);
 render();
+
+// 동기화 파일: 럭드 · 가챠 · 특전 · 정산 값을 다운로드 폴더에 생카-data.json으로 저장 (투두 제외)
+document.getElementById('syncExport').onclick = () => {
+  const data = {};
+  for (const k of [PAGES.luckydraw.key, PAGES.gacha.key, PAGES.benefits.key, KEY]) {
+    try { const v = localStorage.getItem(k); if (v != null) data[k] = v; } catch {}
+  }
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), data })], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: '생카-data.json', target: '_self' });
+  document.body.append(a); a.click(); a.remove();
+  document.getElementById('syncMsg').textContent = '다운로드 폴더에 저장했어요. 이제 Claude한테 "동기화"라고 말해 주세요.';
+};
 </script>
 </body>
 </html>

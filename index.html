@@ -59,7 +59,7 @@ frame.addEventListener('load', () => {
   let doc; try { doc = frame.contentDocument; } catch { return; }
   if (!doc) return;
   const st = doc.createElement('style');
-  st.textContent = '.mini-nav{display:none!important}'
+  st.textContent = '.mini-nav,.sync-export{display:none!important}'
     + 'input,textarea,select,button,label,[contenteditable]{pointer-events:none!important}input,textarea{caret-color:transparent}';
   doc.head.append(st);
   const lock = () => doc.querySelectorAll('input,textarea,select,button').forEach(n => { n.tabIndex = -1; if ('readOnly' in n) n.readOnly = true; });
