@@ -102,7 +102,8 @@
     border-style: dashed; background: #fff; font-size: 13px; line-height: 1.5; padding: 8px 10px;
   }
 
-  .extra-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .extra-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; flex-wrap: wrap; }
+  .extra-row > input:first-child { flex: 1 1 120px; min-width: 0; }
   .extra-row .cost { width: 120px !important; flex-shrink: 0; text-align: right; }
   .extra-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 10px 2px 0; }
   .extra-total span:last-child { color: var(--pink); }
@@ -257,11 +258,11 @@ function numberInput(obj, key, onChange) {
   return input;
 }
 
-function stagePill(it) {
+function stagePill(it, after = render) {
   const n = it.stage || 0;
   const select = el('select', {
     title: '진행상황',
-    onchange: e => { it.stage = Number(e.target.value); save(); render(); },
+    onchange: e => { it.stage = Number(e.target.value); save(); after(); },
   }, ...STAGES.map((name, i) => el('option', { value: i, textContent: name })));
   select.value = n;
   return el('label', { className: 'stage s' + n }, '●'.repeat(n) + '○'.repeat(3 - n) + ' ' + STAGES[n], select);
@@ -333,6 +334,7 @@ function renderExtras() {
     box.append(el('div', { className: 'extra-row' },
       el('input', { value: x.name, placeholder: '품목', oninput: e => { x.name = e.target.value; save(); } }),
       cost,
+      stagePill(x, () => { renderExtras(); updateSummary(); }),
       el('button', {
         className: 'del', textContent: '×', title: '삭제',
         onclick: () => { if (confirm(`"${x.name || '이 항목'}" 삭제할까요?`)) { state.extras.splice(i, 1); save(); renderExtras(); updateSummary(); } },

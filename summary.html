@@ -246,13 +246,13 @@ function collect() {
     const reserved = sum(Object.values(mine.reserve), n => n);
     rows.push({ page: 'luckydraw', name: '럭키드로우',
       note: reserved ? `판매 ${sold} + 예약 교환 ${reserved} / ${tickets}장` : `${sold} / ${tickets}장`,
-      spent: sum(ld.prizes, p => p.cost) + sum(ld.extras, x => x.cost), paid: paidOf(ld.prizes, p => p.cost),
+      spent: sum(ld.prizes, p => p.cost) + sum(ld.extras, x => x.cost), paid: paidOf(ld.prizes, p => p.cost) + paidOf(ld.extras, x => x.cost),
       income: sold * PRICE, max: Math.max(tickets - reserved, 0) });
   }
   if (ga) {
     const sold = mine.gachaSold ?? 0;
     rows.push({ page: 'gacha', name: '가챠', note: `${sold} / ${GACHA_CAPSULES}개`,
-      spent: sum(ga.items, it => it.cost) + sum(ga.extras, x => x.cost), paid: paidOf(ga.items, it => it.cost), income: sold * PRICE, max: GACHA_CAPSULES });
+      spent: sum(ga.items, it => it.cost) + sum(ga.extras, x => x.cost), paid: paidOf(ga.items, it => it.cost) + paidOf(ga.extras, x => x.cost), income: sold * PRICE, max: GACHA_CAPSULES });
   }
   const extraIn = sum(mine.incomes, x => x.amount);
   const extraOut = sum(mine.expenses, x => x.refund === 'done' ? 0 : x.amount);

@@ -46,7 +46,8 @@
   .panel-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 12px; }
   .panel-title::before { content: "♡ "; color: var(--pink); }
 
-  .extra-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .extra-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; flex-wrap: wrap; }
+  .extra-row > input:first-child { flex: 1 1 120px; min-width: 0; }
   .extra-row .cost { width: 120px !important; flex-shrink: 0; text-align: right; }
   .extra-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 10px 2px 0; }
   .extra-total span:last-child { color: var(--pink); }
@@ -460,11 +461,11 @@ function updateSummary() {
 // 품목 옆 발주처: 이름을 누르면 사이트가 새 창으로 열림, ✎로 고치기 (이름을 비우면 삭제)
 // 진행상황: 진행 전 → 주문서 작성 완료 → 결제 완료 → 배송 완료
 const STAGES = ['진행 전', '주문서 작성 완료', '결제 완료', '배송 중 (제작 중)', '배송 완료'];
-function stagePill(p) {
+function stagePill(p, after = render) {
   const n = p.stage || 0;
   const select = el('select', {
     title: '진행상황',
-    onchange: e => { p.stage = Number(e.target.value); save(); render(); },
+    onchange: e => { p.stage = Number(e.target.value); save(); after(); },
   }, ...STAGES.map((name, i) => el('option', { value: i, textContent: name })));
   select.value = n;
   return el('label', { className: 'stage s' + n }, STAGES[n], select);
@@ -571,6 +572,7 @@ function renderExtras() {
     box.append(el('div', { className: 'extra-row' },
       el('input', { value: x.name, placeholder: '품목', oninput: e => { x.name = e.target.value; save(); } }),
       cost,
+      stagePill(x, () => { renderExtras(); updateSummary(); }),
       el('button', {
         className: 'del', textContent: '×', title: '삭제',
         onclick: () => { if (confirm(`"${x.name || '이 항목'}" 삭제할까요?`)) { state.extras.splice(i, 1); save(); renderExtras(); updateSummary(); } },
