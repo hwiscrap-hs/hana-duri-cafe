@@ -46,6 +46,8 @@
 // 보기 전용: data.json(마지막으로 올린 값)을 계산기 저장소에 넣고 보여줌. 여기서 고친 값은 저장되지 않음.
 const PAGES = ['luckydraw', 'gacha', 'benefits', 'summary'];
 const frame = document.getElementById('frame');
+// 보기 전용에서도 눌러지는 버튼: 탭 전환, 접기/펴기 (값은 바뀌지 않음)
+const VIEW_ONLY_OK = '.tab,.sheet-toggle,.list-total,#reserveToggle';
 const statusEl = document.getElementById('status');
 
 const current = () => { const h = location.hash.slice(1); return PAGES.includes(h) ? h : 'luckydraw'; };
@@ -60,9 +62,10 @@ frame.addEventListener('load', () => {
   if (!doc) return;
   const st = doc.createElement('style');
   st.textContent = '.mini-nav,.sync-export{display:none!important}'
-    + 'input,textarea,select,button,label,[contenteditable]{pointer-events:none!important}input,textarea{caret-color:transparent}';
+    + 'input,textarea,select,button,label,[contenteditable]{pointer-events:none!important}input,textarea{caret-color:transparent}'
+    + VIEW_ONLY_OK + '{pointer-events:auto!important}';
   doc.head.append(st);
-  const lock = () => doc.querySelectorAll('input,textarea,select,button').forEach(n => { n.tabIndex = -1; if ('readOnly' in n) n.readOnly = true; });
+  const lock = () => doc.querySelectorAll('input,textarea,select,button').forEach(n => { if (n.matches(VIEW_ONLY_OK)) return; n.tabIndex = -1; if ('readOnly' in n) n.readOnly = true; });
   lock(); new MutationObserver(lock).observe(doc.body, { childList: true, subtree: true });
   doc.addEventListener('click', e => {
     const a = e.target.closest && e.target.closest('a[href]');
