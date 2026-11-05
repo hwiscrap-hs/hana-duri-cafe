@@ -597,12 +597,13 @@
     .simple-row {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       padding: 6px 0;
     }
 
     .simple-row input {
-      flex: 1;
+      flex: 1 1 120px;
       min-width: 0;
     }
 
@@ -977,6 +978,13 @@
       }
       state.v12 = true;
     }
+    // 포장비용에 진행상황 칸 추가: 지금까지 있던 항목은 이미 결제했으므로 결제 완료로 (한 번만)
+    if (!state.v13) {
+      for (const it of state.items) {
+        if (it.cat === 'pack' && (it.stage || 0) < 2) it.stage = 2;
+      }
+      state.v13 = true;
+    }
     save();
 
     const el =(tag, props = {}, ...children) => {
@@ -1208,6 +1216,7 @@
       return el('div', { className: 'simple-row' },
         el('input', { value: it.name, placeholder: '항목', oninput: e => { it.name = e.target.value; save(); } }),
         cost,
+        stagePill(it),
         el('button', {
           className: 'del', textContent: '×', title: '삭제',
           onclick: () => {
