@@ -197,7 +197,8 @@
   <div class="legend">
     각 계산기에 적은 내용을 모아서 보여줘요 (같은 브라우저에서 열어야 해요)<br>
     계산기에서 고친 뒤 이 페이지로 돌아오면 자동으로 다시 계산돼요<br>
-    럭키드로우 1장 · 가챠 1회 3,000원
+    럭키드로우 1장 · 가챠 1회 3,000원<br>
+    럭키드로우 협력진 제공분은 남은 장수에서만 빠지고 수입엔 안 더해져요
   </div>
 </div>
 
@@ -244,10 +245,13 @@ function collect() {
     const sold = mine.luckydrawSold ?? 0;
     // 예약금은 럭드 1장으로 돌려줌 → 예약 인원만큼은 현장에서 팔 수 있는 장수에서 빠지고, 돈은 예약금 줄에 잡힘
     const reserved = sum(Object.values(mine.reserve), n => n);
+    // 협력진 제공분: 협력진에게 주는 장수. 수입 없이 남은 장수에서만 빠짐
+    const crew = mine.luckydrawCrew ?? 0;
+    const used = [`판매 ${sold}`, reserved && `예약 교환 ${reserved}`, crew && `협력진 ${crew}`].filter(Boolean);
     rows.push({ page: 'luckydraw', name: '럭키드로우',
-      note: reserved ? `판매 ${sold} + 예약 교환 ${reserved} / ${tickets}장` : `${sold} / ${tickets}장`,
+      note: used.length > 1 ? `${used.join(' + ')} / ${tickets}장` : `${sold} / ${tickets}장`,
       spent: sum(ld.prizes, p => p.cost) + sum(ld.extras, x => x.cost), paid: paidOf(ld.prizes, p => p.cost) + paidOf(ld.extras, x => x.cost),
-      income: sold * PRICE, max: Math.max(tickets - reserved, 0) });
+      income: sold * PRICE, max: Math.max(tickets - reserved - crew, 0) });
   }
   if (ga) {
     const sold = mine.gachaSold ?? 0;
@@ -365,7 +369,7 @@ function render() {
 
   const sales = document.getElementById('sales');
   if (!sales.childElementCount) {
-    for (const [key, label, unit] of [['luckydrawSold', '럭키드로우 (현장 판매)', '장'], ['gachaSold', '가챠', '개']]) {
+    for (const [key, label, unit] of [['luckydrawSold', '럭키드로우 (현장 판매)', '장'], ['luckydrawCrew', '럭키드로우 (협력진 제공분)', '장'], ['gachaSold', '가챠', '개']]) {
       const input = el('input', {
         inputMode: 'numeric', placeholder: '0', value: mine[key] ?? '',
         oninput: () => {
@@ -385,6 +389,7 @@ function render() {
   const max = Object.fromEntries(rows.filter(r => r.max).map(r => [r.page, r.max]));
   document.getElementById('max-luckydrawSold').textContent = `/ ${max.luckydraw ?? '-'}장`;
   document.getElementById('max-gachaSold').textContent = `/ ${max.gacha ?? '-'}개`;
+  document.getElementById('max-luckydrawCrew').textContent = '장 · 수입 없음';
 }
 
 // 기타 지출 · 기타 수입: 이름 + 금액 줄. 합계 줄을 누르면 상세를 열고 닫음
